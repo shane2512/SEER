@@ -13,7 +13,7 @@ function fixedStrikeMarket(): UnifiedMarket {
       { symbol: "BTC-95000-31DEC26/USDC#YES", label: "YES", index: 0 },
       { symbol: "BTC-95000-31DEC26/USDC#NO", label: "NO", index: 1 },
     ],
-    info: { marketType: "BINARY", id: "0xfixed", asset: "BTC", strike: "9500000", mode: "fixed" },
+    info: { marketType: "BINARY", id: "0xfixed", asset: "BTC", strike: "95000", mode: "fixed" },
   } as unknown as UnifiedMarket;
 }
 
@@ -81,6 +81,7 @@ describe("normalizeMarkets", () => {
     const view = views[0]!;
 
     expect(view.referenceKind).toBe("opening");
+    expect(view.referencePrice).toBeCloseTo(350000, 0);
     expect(view.yesBid).toBeNull();
     expect(view.yesAsk).toBeNull();
     expect(view.yesMid).toBeNull();

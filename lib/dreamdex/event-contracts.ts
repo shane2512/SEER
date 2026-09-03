@@ -10,11 +10,6 @@ import { marketOnchain, outcomeSymbols, type DreamDexContext } from "./markets";
 
 export type MarketStatus = "Listed" | "Trading" | "Locked" | "Settling" | "Resolved" | "Voided";
 
-/** Oracle prices from the indexer use ORACLE_PRICE_DECIMALS of 2
- *  (reference: @somnia-chain/markets-sdk/dist/markets.d.ts:884).
- *  Divide raw values by this scale to get human-readable prices. */
-const ORACLE_PRICE_SCALE = 100; // 10^2
-
 const STATUS_BY_CODE: Record<number, MarketStatus> = {
   0: "Listed",
   1: "Trading",
@@ -72,7 +67,7 @@ export async function normalizeMarkets(
 
     const boundary = boundaryPrice({ id: info.id, strike: info.strike, mode: info.mode }, openingPrices);
     const referenceKind: "strike" | "opening" = info.mode === "reference" ? "opening" : "strike";
-    const referencePrice = boundary ? Number(boundary.raw) / ORACLE_PRICE_SCALE : null;
+    const referencePrice = boundary ? Number(boundary.raw) : null;
 
     const { yes } = outcomeSymbols(market);
     const book = await ctx.exchange.fetchOrderBook(yes, 3);
