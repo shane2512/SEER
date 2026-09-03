@@ -167,21 +167,38 @@ LLM call, and not invented heuristics.
 
 ## 8. Execution & Key Architecture
 
-Full owner/operator split, per `docs/session-keys.md`:
+**Correction from the initial design (verified against the installed
+`@somnia-chain/markets-sdk@0.29.0` type definitions, not just the Bot Kit's
+prose docs):** the on-chain owner/operator split (`placeOrderFor`/
+`cancelOrderFor`, `OperatorPermissionsRegistry`) that `docs/session-keys.md`
+describes is implemented **only for spot pools** in the current SDK —
+`spot/operatorGrants.d.ts` is spot-only, and the binary `Trader.placeOrder` /
+`PlaceOrderParams` surface that Event Contracts actually use has no owner or
+`*For` variant at all. `ec-core`'s own event-contract order path
+(`placeLimit` → `trader.placeOrder`) confirms this: it never sets an owner.
+Claiming a non-custodial split for Event Contract trading would be asserting a
+security property the protocol does not yet provide for this market type —
+exactly what CLAUDE.md's "never invent SDK behavior" rule exists to prevent.
 
-- **Owner (fund) key** — cold, used once via an adapted `operator-setup.ts`: sets
-  manual vault mode, deposits working capital, grants the operator
-  `placeOrderFor`/`cancelOrderFor` on the traded pool. Never touched by the
-  running app.
-- **Operator (bot) key** — hot, server-side only
-  (`BOT_OPERATOR_PRIVATE_KEY`, never `NEXT_PUBLIC_`). Trades on the owner's
-  behalf; every fill settles to the **owner's** vault. Authorization is enforced
-  on-chain by `OperatorPermissionsRegistry`, so a compromised server cannot drain
-  funds — it can only place/cancel within the granted scope.
+SEER therefore uses a **single dedicated bot wallet** model instead:
+
+- **One server-side key** (`BOT_OPERATOR_PRIVATE_KEY`, never `NEXT_PUBLIC_`)
+  both funds and trades, via `trader.placeOrder`. It is a purpose-funded hot
+  wallet holding only demo-scale testnet capital — never the user's main
+  wallet, never reachable from the browser — which is exactly the practical
+  minimum `docs/getting-started.md`'s own "Key handling" section recommends
+  for anyone not using session keys.
+- This still satisfies BR-03 (key isolation: the private key never reaches the
+  frontend, an API route, or a log line) and BR-04 in spirit (a dedicated
+  wallet, not the fund owner's main key) — it does not claim the on-chain
+  non-custodial guarantee BR-02 describes, because that guarantee does not
+  exist yet for Event Contracts. The gap is called out explicitly in the UI's
+  reasoning feed rather than glossed over.
 - Order placement snaps price/size to the venue's tick/lot grid as integers
-  (never a raw float, which reverts with `InvalidPrice` on an 18-decimal venue),
-  and every write is checked with `assertTxOk` since a revert does not throw by
-  default.
+  (never a raw float, which reverts with `InvalidPrice` on an 18-decimal
+  venue — testnet's 6-decimal collateral is not exposed to this bug in
+  practice, but the plan still uses integer-safe conversion), and every write
+  is checked against its receipt since a revert does not throw by default.
 
 ---
 

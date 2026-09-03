@@ -33,8 +33,8 @@ seer/
 │   │   ├── event-contracts.ts # normalizeMarket() -> app-facing MarketView type
 │   │   └── orderbook.ts     # fetchOrderBook wrapper, spread/imbalance calc
 │   ├── bot/
-│   │   ├── context.ts       # operator EcContext (ctx.owner set), owner-only setup helper
-│   │   ├── execution.ts     # placeLimit-derived submit(), assertTxOk, quantize
+│   │   ├── context.ts       # DreamDexContext with signer loaded from BOT_OPERATOR_PRIVATE_KEY
+│   │   ├── execution.ts     # submit() -> trader.placeOrder, receipt check, quantize
 │   │   └── permissions.ts   # validateTrade() — every guardrail in one place
 │   ├── seer/
 │   │   ├── evaluator.ts     # estimateUp model, SpotHistory, referenceReader (adapted)
@@ -46,15 +46,43 @@ seer/
 │   └── utils/ (formatting.ts, errors.ts)
 ├── scripts/
 │   ├── doctor.ts            # RPC + wallet connectivity check (adapted from kit)
-│   ├── ec-doctor.ts         # venue/market discovery check (adapted from kit)
-│   └── operator-setup.ts    # one-time owner-key grant script (adapted from kit)
+│   └── ec-doctor.ts         # venue/market discovery check (adapted from kit)
 ├── __tests__/ (evaluator, validation, decision, trade-state)
 ├── .env.example, .env.local (gitignored)
 ├── package.json, tsconfig.json, next.config.ts, tailwind.config.ts
 ```
 
-This matches README.md's existing project structure section exactly, with
-`scripts/operator-setup.ts` added per the owner/operator decision.
+This matches README.md's existing project structure section exactly.
+
+**SDK surface, verified against the installed `@somnia-chain/markets-sdk@0.29.0`
+type definitions (not the Bot Kit's `ec-core`, which pins an older/narrower
+shape — several of the functions below don't exist on `ec-core`'s version):**
+
+- `new SomniaMarkets(config: SomniaMarketsConfig)` — the exchange handle. Reads:
+  `loadMarkets(reload?): Promise<Record<string, UnifiedMarket>>`,
+  `fetchOrderBook(ref, limit?): Promise<UnifiedOrderBook>`,
+  `fetchPrice(asset): Promise<UnifiedPrice | null>`. Writes:
+  `createOrder(ref, type: "limit"|"market", side: "buy"|"sell", amount, price?, params?): Promise<UnifiedOrder>`,
+  `cancelOrder(id, ref)`. `close(): Promise<void>`.
+- `exchange.client.getMarketOnchain(marketId: Hex): Promise<MarketOnchain>` —
+  authoritative on-chain status (sharp edge #1: never trust the indexer's
+  `active`/`status` field for a write decision).
+- Free functions (top-level package exports, not methods):
+  `isBinaryMarket(m: Market): m is BinaryMarket`,
+  `boundaryPrice(m: Pick<BinaryMarket,"id"|"strike"|"mode">, openingPrices): { raw: string; posted: boolean } | null`,
+  `getOpeningPrices(marketIds: string[], indexerUrl: string): Promise<Record<string, string | null>>`,
+  `SOMNIA_TESTNET_PRICE_FEED`, `SOMNIA_TESTNET_ADDRESSES`.
+- `createOrder`/`fetchOrderBook`/`fetchPrice` all work in **human units** — no
+  manual tick/lot bigint math is needed at the SEER layer (unlike `ec-core`'s
+  raw-trader-tier `placeLimit`, which exists specifically to avoid a float
+  precision bug on 18-decimal venues). Testnet's collateral is 6-decimal, where
+  that bug does not reproduce (`docs/event-contracts.md` sharp edge #3), so the
+  simpler unified `createOrder` is both correct and appropriate for SEER's
+  testnet-only scope.
+- **Key model correction:** `Trader.placeOrder`'s `PlaceOrderParams` (the raw
+  tier `createOrder` sits on) has no owner/`*For` field for binary markets, and
+  `spot/operatorGrants.d.ts` (`placeOrderFor`/`cancelOrderFor`) is spot-only.
+  SEER's operator key therefore signs and trades directly — see PRD.md §8.
 
 ## 2. Domain types (strict TypeScript, no `any`)
 
@@ -102,19 +130,23 @@ type TradeState =
 ```
 GET /api/markets
   -> lib/dreamdex/markets.activeMarkets(ctx, { scope: VENUE_ID })
-  -> per market: marketOnchain() [authoritative status] + snapshot() [YES book]
+       loadMarkets(true) -> filter type==="binary" && active && venue match
+  -> per market: marketOnchain() [client.getMarketOnchain, authoritative status]
+                 + snapshot() [fetchOrderBook(yesSymbol) -> bid/ask/mid]
   -> event-contracts.normalizeMarket() -> MarketView[]
+       (reference price via boundaryPrice(binaryInfo, openingPrices) — batch
+       getOpeningPrices() once per request for all "reference"-mode markets)
 
 POST /api/evaluate { marketId }
   -> re-resolve MarketView (fresh onchain snapshot)
-  -> seer/evaluator: spot via SDK price feed, referenceReader, SpotHistory.momentum
+  -> seer/evaluator: spot via exchange.fetchPrice(asset), SpotHistory.momentum
   -> estimateUp() -> { pUp, tilt, anchored }
   -> seer/decision.toDecision(tilt, confidence-scale) -> Decision (pure, deterministic)
 
 POST /api/trade { marketId, side, size }
   -> lib/bot/permissions.validateTrade() [FR-07 checklist — reject fast on any failure]
-  -> lib/bot/execution.submit() -> quantize + tick/lot-safe placeLimit (type: "ioc")
-  -> assertTxOk(receipt) -> TradeState "submitted" -> poll receipt -> "confirmed" | "failed"
+  -> lib/bot/execution.submit() -> exchange.createOrder(yesOrNoSymbol, "limit", side, size, price, { timeInForce: "IOC" })
+  -> UnifiedOrder { status, txHash, filled } -> TradeState "submitted" -> poll receipt -> "confirmed" | "failed"
 
 GET /api/trade/status?txHash=
   -> lib/blockchain/client poll -> TradeState
@@ -131,8 +163,11 @@ explicitly forbidding a direct evaluation → execution path.
 - API routes: zod-validate input, catch expected errors (market not tradable,
   expired, invalid side/size), return structured `{ error: string }` JSON with an
   appropriate status code, never a raw stack trace or secret.
-- Blockchain writes: always `assertTxOk` — a DreamDEX revert does not throw by
-  default, so an unchecked write "succeeds" silently.
+- Blockchain writes: `createOrder`/`cancelOrder` throw `ContractRevertError` on
+  a landed-but-reverted transaction and `RpcError` on a send that never got an
+  answer (current SDK behavior, per `trade.d.ts`) — both are caught explicitly
+  and mapped to `TradeState: "failed"` with the decoded reason; the result's
+  `status`/`filled` fields are also checked defensively rather than assumed.
 - Market/network errors surface as explicit UI states (loading, empty, error,
   retry) per REQUIREMENTS.md §8, never a blank screen.
 - Every guardrail rejection in `permissions.ts` returns a specific reason string
@@ -142,8 +177,8 @@ explicitly forbidding a direct evaluation → execution path.
 
 `[MARKET] BTC event loaded`, `[SIGNAL] BULLISH confidence=0.82`,
 `[TRADE] validation passed`, `[TRADE] order submitted`, `[TRADE] tx=0x...`,
-`[TRADE] confirmed`. Never log `BOT_OPERATOR_PRIVATE_KEY`, `BOT_OWNER_ADDRESS`'s
-key material, or any raw signing credential.
+`[TRADE] confirmed`. Never log `BOT_OPERATOR_PRIVATE_KEY` or any raw signing
+credential.
 
 ## 6. Testing strategy
 
@@ -175,22 +210,28 @@ NEXT_PUBLIC_SOMNIA_RPC_URL=https://api.infra.testnet.somnia.network
 DREAMDEX_VENUE_ID=            # read off a live market row at setup time — moves over time
 DREAMDEX_INDEXER_URL=https://dev.smk.somnia.host/v1/graphql
 
-BOT_OWNER_ADDRESS=            # fund key's address only — never the owner private key
-BOT_OPERATOR_PRIVATE_KEY=     # server-only, hot key, place/cancel only
+BOT_OPERATOR_PRIVATE_KEY=     # server-only, dedicated demo-funded wallet — never NEXT_PUBLIC_
+MAX_ORDER_SIZE=               # demo-scale share cap, enforced in lib/bot/permissions.ts
 ```
-
-The owner private key is never stored in `.env.local` for the running app — it is
-used once, interactively, to run `scripts/operator-setup.ts`, and then set aside.
 
 ## 8. Spec self-review
 
-- **Placeholders:** none — every section above maps to a verified file/function in
-  the real Bot Kit source (cited in PRD.md §4) or an explicit SEER-authored module.
-- **Internal consistency:** decision engine and execution are checked against each
-  other for the "never LLM → direct transaction" rule (CLAUDE.md §11) — confirmed
-  no path skips risk validation.
+- **Placeholders:** none — every section above maps to a verified function in
+  either the published `@somnia-chain/markets-sdk@0.29.0` type definitions
+  (§1) or the real Bot Kit source (cited in PRD.md §4), or is an explicit
+  SEER-authored module.
+- **Internal consistency:** decision engine and execution are checked against
+  each other for the "never LLM → direct transaction" rule (CLAUDE.md §11) —
+  confirmed no path skips risk validation. Key-architecture claims (§1, PRD.md
+  §8) were revised after inspecting `trade.d.ts`/`spot/operatorGrants.d.ts`
+  directly rather than trusting the Bot Kit's prose docs alone — the owner/
+  operator split is real, but spot-only; SEER no longer claims it for Event
+  Contract trading.
 - **Scope:** single cohesive project, one implementation plan; no decomposition
   needed.
 - **Ambiguity resolved:** IOC order type chosen explicitly for the demo path
   (crosses immediately for a visible confirmation) over resting `post-only`
   (`docs/event-contracts.md` sharp edge #4 — the choice must be deliberate).
+  Order placement uses the unified `createOrder` (human units) rather than the
+  raw bigint trader tier, since testnet's 6-decimal collateral does not
+  reproduce the float-precision bug that tier exists to avoid.
