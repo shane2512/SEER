@@ -43,7 +43,7 @@ describe("validateTrade", () => {
   });
 
   it("rejects when too little time remains before expiry", () => {
-    // headroom scaled to a 5-minute-class market: reject inside the last ~30s
+    // flat 30s floor (see the Note below Step 3 on why this isn't scaled)
     const result = validateTrade(market({ expiryMs: NOW + 10_000 }), request(), LIMITS, NOW);
     expect(result).toEqual({ ok: false, reason: expect.stringMatching(/headroom|too close|expir/i) });
   });
@@ -57,9 +57,39 @@ describe("validateTrade", () => {
     expect(validateTrade(market(), request({ size: 20 }), LIMITS, NOW)).toEqual({ ok: true });
   });
 
+  it("rejects a NaN size (NaN compares false against every bound, so a naive <=/> check lets it through)", () => {
+    const result = validateTrade(market(), request({ size: Number.NaN }), LIMITS, NOW);
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects an invalid side value at runtime, not just at the type level", () => {
+    const result = validateTrade(market(), request({ side: "UP" as unknown as "YES" }), LIMITS, NOW);
+    expect(result.ok).toBe(false);
+  });
+
   it("rejects when the book has no liquidity on the requested side", () => {
     const result = validateTrade(market({ yesAsk: null, yesMid: null }), request({ side: "YES" }), LIMITS, NOW);
     expect(result).toEqual({ ok: false, reason: expect.stringMatching(/liquidity|book/i) });
+  });
+
+  it("rejects a YES trade when the book is one-sided (yesAsk present, no yesMid reference) instead of silently skipping the price check", () => {
+    // A partial book is a real, reachable state — yesMid is null whenever
+    // EITHER side is missing (see normalizeMarkets), not just when both are.
+    // The price-deviation guardrail must fail CLOSED here, not fall through
+    // to { ok: true } because there's technically an ask to read.
+    const result = validateTrade(
+      market({ yesAsk: 0.7, yesBid: null, yesMid: null }),
+      request({ side: "YES" }),
+      LIMITS,
+      NOW,
+    );
+    expect(result.ok).toBe(false);
+  });
+
+  it("accepts a well-formed NO-side trade, comparing against the NO-side reference (not the YES mid)", () => {
+    // side NO on the default market: askOrBid = 1 - yesBid = 0.4,
+    // referenceMid = 1 - yesMid = 0.39 -> ~2.6% deviation, within the 5% limit.
+    expect(validateTrade(market(), request({ side: "NO" }), LIMITS, NOW)).toEqual({ ok: true });
   });
 
   it("rejects when the market is missing entirely (null passed as not-found sentinel)", () => {
