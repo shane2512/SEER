@@ -1,5 +1,5 @@
 import { SomniaMarkets, type SomniaMarketsConfig } from "@somnia-chain/markets-sdk";
-import { defineChain } from "viem";
+import { getSomniaChain, defineChain } from "@somnia-chain/markets-sdk/chains";
 
 export interface DreamDexConfig {
   network: "testnet";
@@ -52,7 +52,7 @@ export function createDreamDexExchange(
     );
   }
 
-  const chain = defineChain({
+  const chain = getSomniaChain(config.chainId) ?? defineChain({
     id: config.chainId,
     name: `somnia-${config.chainId}`,
     nativeCurrency: { name: "Somnia Test Token", symbol: "STT", decimals: 18 },
