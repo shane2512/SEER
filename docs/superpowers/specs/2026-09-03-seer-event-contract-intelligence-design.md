@@ -67,10 +67,17 @@ shape — several of the functions below don't exist on `ec-core`'s version):**
 - `exchange.client.getMarketOnchain(marketId: Hex): Promise<MarketOnchain>` —
   authoritative on-chain status (sharp edge #1: never trust the indexer's
   `active`/`status` field for a write decision).
+- `exchange.client.getOpeningPrices(marketIds: string[]): Promise<Record<string, string | null>>`
+  — batch-fetch each up/down market's posted opening answer. **Verified
+  against the actually-installed package, not just its `.d.ts` prose**:
+  `getOpeningPrices` also exists as a free function in `markets.d.ts`, but is
+  NOT re-exported from `index.d.ts` — `import { getOpeningPrices } from
+  "@somnia-chain/markets-sdk"` does not compile. Only the `client` method is
+  reachable; this was caught by an implementer's dependency-verification
+  step during Task 1 and corrected here before Task 4 used the wrong import.
 - Free functions (top-level package exports, not methods):
   `isBinaryMarket(m: Market): m is BinaryMarket`,
   `boundaryPrice(m: Pick<BinaryMarket,"id"|"strike"|"mode">, openingPrices): { raw: string; posted: boolean } | null`,
-  `getOpeningPrices(marketIds: string[], indexerUrl: string): Promise<Record<string, string | null>>`,
   `SOMNIA_TESTNET_PRICE_FEED`, `SOMNIA_TESTNET_ADDRESSES`.
 - `createOrder`/`fetchOrderBook`/`fetchPrice` all work in **human units** — no
   manual tick/lot bigint math is needed at the SEER layer (unlike `ec-core`'s
@@ -135,7 +142,8 @@ GET /api/markets
                  + snapshot() [fetchOrderBook(yesSymbol) -> bid/ask/mid]
   -> event-contracts.normalizeMarket() -> MarketView[]
        (reference price via boundaryPrice(binaryInfo, openingPrices) — batch
-       getOpeningPrices() once per request for all "reference"-mode markets)
+       exchange.client.getOpeningPrices() once per request for all
+       "reference"-mode markets)
 
 POST /api/evaluate { marketId }
   -> re-resolve MarketView (fresh onchain snapshot)
