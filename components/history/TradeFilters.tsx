@@ -21,14 +21,14 @@ function Segmented<T extends string>({
 }) {
   return (
     <div>
-      <div className="font-mono text-[11px] font-bold tracking-[0.1em] text-text-dim uppercase">{label}</div>
-      <div className="mt-1 flex divide-x divide-border-dim border border-border-dim">
+      <div className="font-display text-[11px] font-bold tracking-[0.08em] text-text-dim uppercase">{label}</div>
+      <div className="clay-well mt-1 flex gap-1 rounded-full border-2 border-border-well bg-surface-well p-1">
         {options.map((opt) => (
           <button
             key={opt.text}
             onClick={() => onChange(opt.value)}
-            className={`px-2 py-1 font-mono text-xs font-bold tracking-[0.05em] uppercase focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-border-hard ${
-              value === opt.value ? "bg-border-hard text-surface-base" : "text-text-dim hover:text-text-bright"
+            className={`rounded-full px-3 py-1 font-mono text-xs font-bold tracking-[0.05em] uppercase transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-hard ${
+              value === opt.value ? "clay-2 border-2 border-border-hard bg-border-hard text-surface-base" : "text-text-dim hover:text-text-bright"
             }`}
           >
             {opt.text}

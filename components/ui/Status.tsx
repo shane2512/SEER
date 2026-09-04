@@ -10,5 +10,5 @@ const LABELS: Record<TradeState["status"], string> = {
 };
 
 export function Status({ state }: { state: TradeState["status"] }) {
-  return <span className="font-mono text-sm font-bold tracking-wide text-text-dim uppercase">{LABELS[state]}</span>;
+  return <span className="font-display text-sm font-bold tracking-wide text-text-dim uppercase">{LABELS[state]}</span>;
 }

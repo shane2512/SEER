@@ -39,23 +39,23 @@ export default function HistoryPage() {
 
   return (
     <main className="mx-auto max-w-5xl space-y-3 p-4 lg:p-6">
-      <div className="flex items-center justify-between border-b-2 border-border-hard pb-3">
-        <h1 className="font-mono text-2xl font-bold tracking-tight text-text-bright">Trade History</h1>
+      <div className="flex items-center justify-between border-b-2 border-border-layer pb-3">
+        <h1 className="font-display text-2xl font-bold tracking-tight text-text-bright">Trade History</h1>
         <ConnectWalletButton />
       </div>
 
       {!isConnected && (
-        <p className="border border-border-dim p-3 font-mono text-sm text-text-dim">
+        <p className="clay-1 rounded-2xl border-2 border-border-layer bg-surface-layer p-3 font-mono text-sm text-text-dim">
           Connect your wallet to see your real on-chain trade history.
         </p>
       )}
-      {error && <p className="border border-error p-3 font-mono text-sm text-error">{error}</p>}
+      {error && <p className="rounded-2xl border-2 border-error bg-surface-well p-3 font-mono text-sm text-error">{error}</p>}
 
       {isConnected && portfolio && (
         <>
           <HistoryMetrics portfolio={portfolio} />
           <PositionsPanel portfolio={portfolio} />
-          <div className="border border-border-dim p-3">
+          <div className="clay-1 rounded-2xl border-2 border-border-layer bg-surface-layer p-4">
             <TradeFilters assets={assets} filters={filters} onChange={setFilters} />
             <div className="mt-3">
               <TradeTable trades={filteredTrades} />

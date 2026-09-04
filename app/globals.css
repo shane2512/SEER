@@ -1,55 +1,57 @@
 @import "tailwindcss";
 
 /*
- * Terminal Brutalism — SEER's design system.
+ * Brutal-Clay Dark Matrix — SEER's design system.
  *
- * Pulled from the real Stitch project "Brutalist Minimal Trading
- * Dashboard" (project 1897895306545728849) via the Stitch MCP connector's
- * get_project call, not guessed from a screenshot. Full rationale and
- * component specs: docs/superpowers/specs/2026-09-04-terminal-brutalism-design-system.md
+ * Pulled from the real Stitch design system "Brutal-Clay Dark Matrix"
+ * (project 1897895306545728849) via the Stitch MCP connector's
+ * list_design_systems call — real tokens, not guessed. Replaces the
+ * earlier "Terminal Brutalism" system (docs/superpowers/specs/
+ * 2026-09-04-terminal-brutalism-design-system.md), which is superseded by
+ * docs/superpowers/specs/2026-09-04-brutal-clay-design-system.md.
  *
- * Two-tone monochrome baseline (pitch black / pure white) with a strict
- * greyscale support set — zero chromatic color anywhere. State (long/short,
- * yes/no, win/loss) is communicated via fill inversion and bracketed text
- * tokens ([LONG], [SETTLED]), never hue. Every corner is a hard 90 degrees;
- * --radius-* below all resolve to 0 for exactly that reason.
+ * The shape language flips from Terminal Brutalism's flat zero-radius/hard
+ * offset shadow to genuine claymorphism: real border-radius (up to full
+ * pills), and multi-layer inset+exterior box-shadows that simulate an
+ * inflated, tactile rubber/obsidian surface. The monospace, bracketed-label
+ * brutalist CONTENT language (`[LIVE]`, `// SEC_01`, uppercase labels)
+ * carries over unchanged — only the geometry and elevation model changed.
  */
 
 :root {
-  /* Surfaces */
-  --color-surface-base: #000000;
-  --color-surface-layer: #0a0a0a;
-  --color-surface-active: #1a1a1a;
+  /* Surfaces (grayscale/cold slate only — no chromatic hue anywhere) */
+  --color-surface-base: #0a0a0c; /* Obsidian Core — page background */
+  --color-surface-well: #08090a; /* Debossed cavity — inputs, inactive wells */
+  --color-surface-layer: #121316; /* Level 1 — cards, modules, panels */
+  --color-surface-active: #18191e; /* Level 2 — buttons, pills, active modals */
 
   /* Borders */
-  --color-border-hard: #ffffff;
-  --color-border-dim: #333333;
+  --color-border-hard: #ffffff; /* Reserved for inverted/primary elements' rim */
+  --color-border-well: #1c1e24;
+  --color-border-layer: #262933;
+  --color-border-active: #323642;
+  /* Alias kept for components written against Terminal Brutalism's single
+     border-dim token before this system's well/layer/active split — points
+     at the mid-tier (layer) value rather than forcing a full rename sweep. */
+  --color-border-dim: var(--color-border-layer);
 
   /* Text */
-  --color-text-bright: #ffffff;
-  --color-text-dim: #888888;
-  --color-text-inert: #444444;
+  --color-text-bright: #ffffff; /* Primary Ink — active readouts, key values */
+  --color-text-dim: #a3a8b4; /* Secondary Slate — body, metadata */
+  --color-text-inert: #3d424d; /* Structural Tertiary — disabled */
 
-  /* Error stays legible even in a monochrome system — the DESIGN.md
-     reserves color exclusively for irrecoverable/destructive states, never
-     for routine market direction (that's fill inversion + text tokens). */
   --color-error: #ffb4ab;
 
-  /* Spacing scale (DESIGN.md's own unit-N tokens) */
-  --spacing-unit-1: 0.25rem;
-  --spacing-unit-2: 0.5rem;
-  --spacing-unit-3: 0.75rem;
-  --spacing-unit-4: 1rem;
-  --spacing-unit-6: 1.5rem;
-  --spacing-unit-8: 2rem;
-  --spacing-unit-12: 3rem;
-  --spacing-unit-16: 4rem;
-  --spacing-grid-gutter: 1px;
-  --spacing-layout-margin-desktop: 1.5rem;
-  --spacing-layout-margin-mobile: 0.75rem;
-
-  /* Roundness: strictly orthogonal, no exceptions (DESIGN.md "Shapes") */
-  --radius-none: 0px;
+  /* Spacing (DESIGN.md's own unit-* tokens) */
+  --spacing-unit-2xs: 0.125rem;
+  --spacing-unit-xs: 0.25rem;
+  --spacing-unit-sm: 0.5rem;
+  --spacing-unit-md: 1rem;
+  --spacing-unit-lg: 1.5rem;
+  --spacing-unit-xl: 2rem;
+  --spacing-unit-2xl: 3rem;
+  --spacing-gutter-mobile: 0.75rem;
+  --spacing-gutter-desktop: 1.25rem;
 }
 
 @theme inline {
@@ -57,80 +59,83 @@
   --color-foreground: var(--color-text-bright);
 
   --color-surface-base: var(--color-surface-base);
+  --color-surface-well: var(--color-surface-well);
   --color-surface-layer: var(--color-surface-layer);
   --color-surface-active: var(--color-surface-active);
   --color-border-hard: var(--color-border-hard);
+  --color-border-well: var(--color-border-well);
+  --color-border-layer: var(--color-border-layer);
+  --color-border-active: var(--color-border-active);
   --color-border-dim: var(--color-border-dim);
   --color-text-bright: var(--color-text-bright);
   --color-text-dim: var(--color-text-dim);
   --color-text-inert: var(--color-text-inert);
   --color-error: var(--color-error);
 
-  --font-sans: var(--font-space-mono);
+  --font-sans: var(--font-jetbrains-mono);
   --font-mono: var(--font-jetbrains-mono);
+  --font-display: var(--font-space-mono);
 
-  /* Type scale — display/headline/body in Space Mono, data/labels in
-     JetBrains Mono with tabular figures forced on for column stability. */
-  --text-display-lg: 56px;
-  --text-display-lg--line-height: 60px;
-  --text-display-lg--letter-spacing: -0.04em;
-  --text-display-lg--font-weight: 700;
+  /* Real radius scale (DESIGN.md's `rounded` tokens) — the inverse of
+     Terminal Brutalism's all-zero scale. Inflated containers use lg/xl;
+     interactive pills/badges use full. */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
 
-  --text-headline-xl: 40px;
-  --text-headline-xl--line-height: 48px;
-  --text-headline-xl--letter-spacing: -0.03em;
-  --text-headline-xl--font-weight: 700;
+  /* Type scale — Space Mono for display/headline/label, JetBrains Mono for
+     body/data (tabular figures forced via [data-numeric]/.font-mono below). */
+  --text-display-hero: 48px;
+  --text-display-hero--line-height: 56px;
+  --text-display-hero--letter-spacing: -0.04em;
+  --text-display-hero--font-weight: 700;
+  --text-display-hero--font-family: var(--font-space-mono);
 
-  --text-headline-lg: 24px;
-  --text-headline-lg--line-height: 30px;
-  --text-headline-lg--letter-spacing: -0.02em;
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 40px;
+  --text-headline-lg--letter-spacing: -0.03em;
   --text-headline-lg--font-weight: 700;
+  --text-headline-lg--font-family: var(--font-space-mono);
+
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--letter-spacing: -0.02em;
+  --text-headline-md--font-weight: 700;
+  --text-headline-md--font-family: var(--font-space-mono);
 
   --text-headline-sm: 18px;
-  --text-headline-sm--line-height: 24px;
+  --text-headline-sm--line-height: 26px;
   --text-headline-sm--letter-spacing: -0.01em;
   --text-headline-sm--font-weight: 700;
+  --text-headline-sm--font-family: var(--font-space-mono);
 
-  --text-body-lg: 16px;
+  --text-body-lg: 15px;
   --text-body-lg--line-height: 24px;
-  --text-body-lg--font-weight: 400;
+  --text-body-lg--letter-spacing: -0.01em;
+  --text-body-lg--font-weight: 500;
 
-  --text-body-sm: 14px;
-  --text-body-sm--line-height: 20px;
+  --text-body-md: 13px;
+  --text-body-md--line-height: 20px;
+  --text-body-md--font-weight: 400;
+
+  --text-body-sm: 11px;
+  --text-body-sm--line-height: 16px;
+  --text-body-sm--letter-spacing: 0.01em;
   --text-body-sm--font-weight: 400;
 
-  --text-data-lg: 18px;
-  --text-data-lg--line-height: 22px;
-  --text-data-lg--letter-spacing: -0.02em;
-  --text-data-lg--font-weight: 700;
-  --text-data-lg--font-family: var(--font-jetbrains-mono);
+  --text-label-lg: 13px;
+  --text-label-lg--line-height: 16px;
+  --text-label-lg--letter-spacing: 0.06em;
+  --text-label-lg--font-weight: 700;
+  --text-label-lg--font-family: var(--font-space-mono);
 
-  --text-data-md: 14px;
-  --text-data-md--line-height: 18px;
-  --text-data-md--font-weight: 500;
-  --text-data-md--font-family: var(--font-jetbrains-mono);
-
-  --text-data-sm: 12px;
-  --text-data-sm--line-height: 16px;
-  --text-data-sm--letter-spacing: 0.02em;
-  --text-data-sm--font-weight: 400;
-  --text-data-sm--font-family: var(--font-jetbrains-mono);
-
-  --text-label-caps: 11px;
-  --text-label-caps--line-height: 14px;
-  --text-label-caps--letter-spacing: 0.1em;
-  --text-label-caps--font-weight: 700;
-  --text-label-caps--font-family: var(--font-jetbrains-mono);
-
-  /* Radius: every scale name resolves to 0. Defined as a full scale (not a
-     single override) so `rounded-*` utilities stay available in markup for
-     readability while never actually rounding anything. */
-  --radius-none: 0px;
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
-  --radius-full: 0px;
+  --text-label-md: 11px;
+  --text-label-md--line-height: 14px;
+  --text-label-md--letter-spacing: 0.08em;
+  --text-label-md--font-weight: 700;
+  --text-label-md--font-family: var(--font-space-mono);
 }
 
 body {
@@ -138,17 +143,61 @@ body {
   color: var(--color-text-bright);
 }
 
-/* Tabular figures everywhere numeric — price ladders, timestamps, PnL,
-   liquidity ticks (DESIGN.md "Typographic hierarchy guidelines"). */
 .font-mono,
 [data-numeric] {
   font-variant-numeric: tabular-nums;
 }
 
-/* Hard offset shadow for primary execution controls / floating windows —
-   zero blur, diagrammatic depth only (DESIGN.md "Elevation & Depth"). No
-   Tailwind shadow-* utility produces this; kept as a plain class instead of
-   an arbitrary-value utility since it's reused across every primary CTA. */
-.shadow-hard {
-  box-shadow: 4px 4px 0px 0px var(--color-border-hard);
+/*
+ * Clay elevation utilities — the DESIGN.md's "Extrusion Levels". Each
+ * couples an exterior drop shadow with inset highlight/shadow layers to
+ * simulate an inflated, tactile surface. Applied alongside a
+ * bg-surface-* and border-border-* pair, plus a rounded-* radius.
+ */
+.clay-well {
+  box-shadow:
+    inset 0 3px 6px rgba(0, 0, 0, 0.85),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.05);
+}
+
+.clay-1 {
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.12),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.6),
+    0 8px 16px -2px rgba(0, 0, 0, 0.7),
+    0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.clay-2 {
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.22),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.8),
+    0 12px 24px -4px rgba(0, 0, 0, 0.85),
+    0 4px 8px rgba(0, 0, 0, 0.6);
+  transition: box-shadow 150ms ease-out, transform 150ms ease-out;
+}
+
+.clay-2:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 3px 6px rgba(0, 0, 0, 0.9),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+/* Primary volumetric button: solid white capsule, inset top sheen + bottom
+ * clay drop (DESIGN.md's Buttons > Primary Volumetric). */
+.clay-primary {
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -3px 0 rgba(160, 165, 175, 0.5),
+    0 12px 24px -4px rgba(0, 0, 0, 0.85),
+    0 4px 8px rgba(0, 0, 0, 0.6);
+  transition: box-shadow 150ms ease-out, transform 150ms ease-out;
+}
+
+.clay-primary:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.6);
 }

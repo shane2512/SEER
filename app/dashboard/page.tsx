@@ -35,8 +35,8 @@ export default function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-5xl space-y-3 p-4 lg:p-6">
-      <div className="flex items-center justify-between border-b-2 border-border-hard pb-3">
-        <h1 className="font-mono text-2xl font-bold tracking-tight text-text-bright">SEER</h1>
+      <div className="flex items-center justify-between border-b-2 border-border-layer pb-3">
+        <h1 className="font-display text-2xl font-bold tracking-tight text-text-bright">SEER</h1>
         <ConnectWalletButton />
       </div>
 
@@ -58,7 +58,7 @@ export default function DashboardPage() {
               <p className="font-mono text-sm text-text-dim uppercase">Evaluating…</p>
             )}
             {evalError && (
-              <div className="border border-error p-3 font-mono text-sm text-error">
+              <div className="rounded-2xl border-2 border-error bg-surface-well p-3 font-mono text-sm text-error">
                 <p>{evalError}</p>
                 <button onClick={evaluate} className="mt-1 font-bold underline">
                   Retry Evaluation
@@ -80,12 +80,12 @@ export default function DashboardPage() {
             />
           )}
           {!isConnected && (
-            <p className="border border-border-dim p-3 font-mono text-sm text-text-dim">
+            <p className="rounded-2xl border-2 border-border-layer bg-surface-layer p-3 font-mono text-sm text-text-dim">
               Connect your wallet to trade this signal.
             </p>
           )}
           {isConnected && isWrongNetwork && (
-            <p className="border border-border-dim p-3 font-mono text-sm text-text-dim">
+            <p className="rounded-2xl border-2 border-border-layer bg-surface-layer p-3 font-mono text-sm text-text-dim">
               Switch to Somnia Shannon to trade this signal.
             </p>
           )}

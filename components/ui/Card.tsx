@@ -1,10 +1,10 @@
 import type { HTMLAttributes } from "react";
 
-// Terminal Brutalism panel — a grid cell with a 1px dim perimeter and an
-// optional coordinate-style badge docked on the top border (design system
-// doc's Cards & Market Modules rule). `label` should be real content
-// (a market symbol, a page section name), never the mockup's arbitrary
-// tile numbering.
+// Brutal-Clay panel — a Level 1 inflated slab: rounded-2xl, 2px border,
+// layered inset+exterior shadow (see .clay-1 in globals.css). `label`
+// renders as a brutalist system marker (e.g. "// MARKET") above an inset
+// groove separating it from the body, per the DESIGN.md's Cards & Modules
+// spec — real content, never the mockup's arbitrary tile numbering.
 export function Card({
   label,
   className = "",
@@ -12,11 +12,15 @@ export function Card({
   ...props
 }: HTMLAttributes<HTMLDivElement> & { label?: string }) {
   return (
-    <div className={`relative border border-border-dim bg-surface-layer p-4 ${label ? "mt-3" : ""} ${className}`} {...props}>
+    <div
+      className={`clay-1 rounded-2xl border-2 border-border-layer bg-surface-layer p-4 ${className}`}
+      {...props}
+    >
       {label && (
-        <span className="absolute -top-3 left-3 bg-surface-base px-2 font-mono text-[11px] font-bold tracking-[0.1em] text-text-dim uppercase">
+        <div className="mb-3 border-b border-border-well pb-2 font-display text-[11px] font-bold tracking-[0.08em] text-text-dim uppercase">
+          {"// "}
           {label}
-        </span>
+        </div>
       )}
       {children}
     </div>

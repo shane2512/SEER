@@ -22,11 +22,11 @@ export function MarketSelector({
   if (markets.length === 0) return null;
 
   return (
-    <div className="border border-border-dim">
-      <div className="border-b border-border-dim bg-surface-layer px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.1em] text-text-dim uppercase">
+    <div className="clay-1 rounded-2xl border-2 border-border-layer bg-surface-layer p-2">
+      <div className="px-2 pb-2 font-display text-[11px] font-bold tracking-[0.08em] text-text-dim uppercase">
         Market Selector // {markets.length} Active
       </div>
-      <div className="flex divide-x divide-border-dim overflow-x-auto">
+      <div className="flex gap-2 overflow-x-auto">
         {markets.map((market, i) => {
           const isSelected = market.marketId === selected;
           return (
@@ -34,8 +34,8 @@ export function MarketSelector({
               key={market.marketId}
               onClick={() => onSelect(market.marketId)}
               aria-pressed={isSelected}
-              className={`min-w-[150px] flex-1 px-3 py-2 text-left font-mono transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-border-hard ${
-                isSelected ? "bg-border-hard text-surface-base" : "bg-surface-base text-text-bright hover:bg-surface-active"
+              className={`min-w-[150px] flex-1 rounded-xl px-3 py-2 text-left font-mono transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-hard ${
+                isSelected ? "clay-2 border-2 border-border-hard bg-border-hard text-surface-base" : "border-2 border-border-well bg-surface-well text-text-bright hover:bg-surface-active"
               }`}
             >
               <div className="flex items-center justify-between text-[11px] font-bold tracking-[0.1em] uppercase">
