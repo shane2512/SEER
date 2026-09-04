@@ -75,7 +75,18 @@ export function validateTrade(
   if (askOrBid === null || referenceMid === null) {
     return { ok: false, reason: `no ${request.side} liquidity or reference price on the book` };
   }
-  const deviation = Math.abs(askOrBid - referenceMid) / referenceMid;
+  // A plain relative deviation (|askOrBid - referenceMid| / referenceMid)
+  // blows up whenever referenceMid sits near 0 or 1 — a market priced at
+  // YES ~98% puts the NO side's reference mid near 0.02, so even a normal
+  // few-cent spread reads as a 70%+ "deviation" and gets rejected, even
+  // though the book itself is fine. Confirmed live against a real market
+  // (BTC-...-36E0, NO side): reported 72.4% on a completely ordinary
+  // two-cent-wide book. Flooring the denominator at 0.05 keeps the check
+  // identical for every market priced at or above 5% (the overwhelming majority)
+  // and only changes behavior for the near-0/near-1 edge this guardrail
+  // was never actually meant to catch.
+  const deviationDenominator = Math.max(referenceMid, 0.05);
+  const deviation = Math.abs(askOrBid - referenceMid) / deviationDenominator;
   if (deviation > limits.maxPriceDeviation) {
     return { ok: false, reason: `price deviates ${(deviation * 100).toFixed(1)}% from the book mid` };
   }

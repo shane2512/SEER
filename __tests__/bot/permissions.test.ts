@@ -92,6 +92,36 @@ describe("validateTrade", () => {
     expect(validateTrade(market(), request({ side: "NO" }), LIMITS, NOW)).toEqual({ ok: true });
   });
 
+  it("accepts a NO-side trade on a heavily skewed market with a normal absolute spread that the old relative-only check would have wrongly rejected", () => {
+    // referenceMid (NO) = 1 - 0.99 = 0.01; askOrBid (NO) = 1 - 0.988 = 0.012.
+    // Absolute gap is 0.002 -- a perfectly ordinary spread -- but relative
+    // to a 1% reference that's a 20% "deviation" under a plain-relative
+    // formula, which wrongly rejects a healthy book purely because the
+    // reference sits near zero. Confirmed live against a real market
+    // (BTC-...-36E0, NO side, reported 72.4%) before this fix. Flooring
+    // the denominator at 0.05 brings this synthetic case to 4%, within
+    // the 5% limit.
+    const result = validateTrade(
+      market({ yesBid: 0.988, yesAsk: 0.992, yesMid: 0.99 }),
+      request({ side: "NO" }),
+      LIMITS,
+      NOW,
+    );
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("still rejects a genuinely bad price deviation on a near-boundary market — the floor narrows the false-positive zone, it doesn't disable the guardrail", () => {
+    // Same 1% NO reference as above, but a real 4-cent gap this time
+    // (askOrBid 0.05 vs referenceMid 0.01) -- 80% even after flooring.
+    const result = validateTrade(
+      market({ yesBid: 0.95, yesAsk: 0.995, yesMid: 0.99 }),
+      request({ side: "NO" }),
+      LIMITS,
+      NOW,
+    );
+    expect(result.ok).toBe(false);
+  });
+
   it("rejects when the market is missing entirely (null passed as not-found sentinel)", () => {
     const result = validateTrade(market({ status: "Voided" }), request(), LIMITS, NOW);
     expect(result.ok).toBe(false);
