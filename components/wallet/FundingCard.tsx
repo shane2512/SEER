@@ -34,13 +34,12 @@ export function FundingCard() {
   }
 
   return (
-    <Card>
-      <h3 className="font-semibold">Fund your wallet</h3>
-      <div className="mt-2 space-y-2 text-sm">
+    <Card label="FUNDING // WALLET LOW">
+      <div className="space-y-2 font-mono text-sm">
         {sttLow && (
-          <p>
+          <p className="text-text-bright">
             Low on STT (gas) —{" "}
-            <a href={STT_FAUCET_URL} target="_blank" rel="noopener noreferrer" className="underline">
+            <a href={STT_FAUCET_URL} target="_blank" rel="noopener noreferrer" className="underline hover:text-text-dim">
               Get STT from Google Cloud&apos;s faucet
             </a>
             .
@@ -48,13 +47,13 @@ export function FundingCard() {
         )}
         {tUsdcLow && (
           <div className="flex items-center gap-2">
-            <span>Low on TestUSDC —</span>
+            <span className="text-text-bright">Low on TestUSDC —</span>
             <Button onClick={mintTestUsdc} disabled={minting || !exchange}>
               {minting ? "Minting…" : "Mint TestUSDC"}
             </Button>
           </div>
         )}
-        {mintError && <p className="text-rose-600">{mintError}</p>}
+        {mintError && <p className="text-error">{mintError}</p>}
       </div>
     </Card>
   );

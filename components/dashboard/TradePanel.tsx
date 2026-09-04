@@ -23,14 +23,22 @@ export function TradePanel({
   const disabled = decision.direction === "NEUTRAL" || inFlight;
 
   return (
-    <Card>
-      <div className="flex items-center justify-between">
+    <Card label="EXECUTION // WALLET-SIGNED ORDER">
+      <dl className="grid grid-cols-2 gap-y-1 font-mono text-sm">
+        <dt className="text-[11px] font-bold tracking-[0.1em] text-text-dim uppercase">Order Size</dt>
+        <dd className="text-right text-text-bright" data-numeric>{size.toFixed(2)} contracts</dd>
+        <dt className="text-[11px] font-bold tracking-[0.1em] text-text-dim uppercase">Derived Action</dt>
+        <dd className="text-right text-text-bright">
+          Buy {side} ({decision.direction})
+        </dd>
+      </dl>
+      <div className="mt-3 flex items-center justify-between border-t border-border-dim pt-3">
         <Button disabled={disabled} onClick={() => onExecute(side, size)}>
           Execute {side}
         </Button>
         <Status state={tradeState.status} />
       </div>
-      {tradeState.status === "failed" && <p className="mt-2 text-sm text-rose-600">{tradeState.error}</p>}
+      {tradeState.status === "failed" && <p className="mt-2 font-mono text-sm text-error">{tradeState.error}</p>}
     </Card>
   );
 }

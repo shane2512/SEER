@@ -73,7 +73,7 @@ describe("DashboardPage", () => {
     const { default: DashboardPage } = await import("@/app/dashboard/page");
     render(<DashboardPage />);
 
-    await waitFor(() => expect(screen.getByText("BTC")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText("BTC")[0]).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText("BULLISH")).toBeInTheDocument());
 
     fireEvent.click(screen.getByRole("button", { name: /execute/i }));
@@ -96,11 +96,37 @@ describe("DashboardPage", () => {
     const { default: DashboardPage } = await import("@/app/dashboard/page");
     render(<DashboardPage />);
 
-    await waitFor(() => expect(screen.getByText("BTC")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText("BTC")[0]).toBeInTheDocument());
     await waitFor(() =>
       expect(screen.getByText(/no live price feed reading for this asset/i)).toBeInTheDocument(),
     );
     expect(screen.queryByText("BULLISH")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /retry evaluation/i })).toBeInTheDocument();
+  });
+
+  it("switches the displayed market when a different MarketSelector tile is clicked", async () => {
+    const otherMarket = { ...market, marketId: "0x2", asset: "ETH", symbol: "ETH-2500-31DEC26/USDC", referencePrice: 2_500 };
+    mockFetch.mockImplementation((url: string) => {
+      if (url.startsWith("/api/markets"))
+        return Promise.resolve({ ok: true, json: async () => ({ markets: [market, otherMarket], venueIds: [] }) });
+      if (url === "/api/evaluate") return Promise.resolve({ ok: true, json: async () => ({ decision }) });
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+    mockUseWallet.mockReturnValue({
+      address: "0xABC", isConnected: true, isWrongNetwork: false, isConnecting: false, isSwitching: false,
+      connect: vi.fn(), disconnect: vi.fn(), switchToSomnia: vi.fn(),
+    });
+
+    const { default: DashboardPage } = await import("@/app/dashboard/page");
+    render(<DashboardPage />);
+
+    // Both markets appear once each in the selector strip; ETH is not yet
+    // shown a second time (the MarketCard detail panel) until selected.
+    await waitFor(() => expect(screen.getAllByText("BTC")).toHaveLength(2));
+    expect(screen.getAllByText("ETH")).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("button", { name: /ETH/ }));
+
+    await waitFor(() => expect(screen.getAllByText("ETH")).toHaveLength(2));
   });
 });

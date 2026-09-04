@@ -1,3 +1,4 @@
+import { Card } from "@/components/ui/Card";
 import type { TradeState } from "@/lib/blockchain/transactions";
 
 const STEPS = [
@@ -21,20 +22,24 @@ function stepsCompleted(hasDecision: boolean, tradeState: TradeState): number {
 export function ReasoningFeed({ tradeState, hasDecision }: { tradeState: TradeState; hasDecision: boolean }) {
   const completed = stepsCompleted(hasDecision, tradeState);
   return (
-    <div>
-      <ol className="space-y-1 text-sm">
-        {STEPS.map((step, i) => (
-          <li key={step} className={i < completed ? "font-medium text-slate-900" : "text-slate-400"}>
-            {i < completed ? "✓ " : "  "}
-            {step.toLowerCase().replace(/^\w/, (c) => c.toUpperCase())}
-          </li>
-        ))}
+    <Card label={`VERIFICATION // ${completed}/${STEPS.length} PASSED`}>
+      <ol className="space-y-1.5 font-mono text-sm">
+        {STEPS.map((step, i) => {
+          const done = i < completed;
+          return (
+            <li key={step} className={`flex items-center gap-2 ${done ? "text-text-bright" : "text-text-inert"}`}>
+              <span className="font-bold">{done ? "[✓]" : "[ ]"}</span>
+              <span className={done ? "font-bold" : ""}>
+                STEP {i + 1}: {step}
+              </span>
+            </li>
+          );
+        })}
       </ol>
-      <p className="mt-3 text-xs text-slate-400">
-        Trades are signed by your own connected wallet — SEER never holds or
-        sees your private key. The wallet extension prompts you to approve
-        each order before it submits.
+      <p className="mt-3 border-t border-border-dim pt-3 font-mono text-xs text-text-dim">
+        Trades are signed by your own connected wallet — SEER never holds or sees your private key. The wallet
+        extension prompts you to approve each order before it submits.
       </p>
-    </div>
+    </Card>
   );
 }

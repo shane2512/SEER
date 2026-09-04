@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import type { TradeState } from "@/lib/blockchain/transactions";
 import { explorerTxUrl } from "@/lib/blockchain/explorer";
 
@@ -23,18 +24,17 @@ export function PositionCard({ tradeState }: { tradeState: TradeState }) {
   const chainId = parseChainId(process.env.NEXT_PUBLIC_SOMNIA_CHAIN_ID);
   const explorerUrl = explorerTxUrl(chainId, tradeState.txHash);
   return (
-    <Card>
-      <h3 className="font-semibold">Position</h3>
-      <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
-        <dt className="text-slate-500">Transaction</dt>
-        <dd className="truncate font-mono">
+    <Card label="POSITION // COMMITTED STATE">
+      <div className="flex items-center justify-between">
+        <Badge tone={tradeState.status === "confirmed" ? "bullish" : "live"}>
+          {tradeState.status === "confirmed" ? "■ Filled" : "■ Pending"}
+        </Badge>
+      </div>
+      <dl className="mt-3 grid grid-cols-2 gap-y-1 font-mono text-sm">
+        <dt className="text-[11px] font-bold tracking-[0.1em] text-text-dim uppercase">Transaction</dt>
+        <dd className="truncate text-right text-text-bright">
           {explorerUrl ? (
-            <a
-              href={explorerUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-slate-700"
-            >
+            <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-text-dim">
               {tradeState.txHash}
             </a>
           ) : (
@@ -43,10 +43,10 @@ export function PositionCard({ tradeState }: { tradeState: TradeState }) {
         </dd>
         {tradeState.status === "confirmed" && (
           <>
-            <dt className="text-slate-500">Filled</dt>
-            <dd>{tradeState.filled}</dd>
-            <dt className="text-slate-500">Price</dt>
-            <dd>{tradeState.price.toFixed(2)}</dd>
+            <dt className="text-[11px] font-bold tracking-[0.1em] text-text-dim uppercase">Filled</dt>
+            <dd className="text-right text-text-bright" data-numeric>{tradeState.filled} contracts</dd>
+            <dt className="text-[11px] font-bold tracking-[0.1em] text-text-dim uppercase">Fill Price</dt>
+            <dd className="text-right text-text-bright" data-numeric>{tradeState.price.toFixed(2)}</dd>
           </>
         )}
       </dl>

@@ -22,7 +22,7 @@ export function ConnectWalletButton() {
   if (isWrongNetwork) {
     return (
       <div className="flex items-center gap-2">
-        <Badge tone="bearish">Wrong network</Badge>
+        <Badge tone="error">Wrong Network</Badge>
         <Button onClick={switchToSomnia} disabled={isSwitching}>
           {isSwitching ? "Switching…" : "Switch to Somnia Shannon"}
         </Button>
@@ -31,9 +31,12 @@ export function ConnectWalletButton() {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <Badge tone="neutral">{address ? truncate(address) : ""}</Badge>
-      <button onClick={() => disconnect()} className="text-sm text-slate-500 underline">
+    <div className="flex items-center gap-2 font-mono text-sm">
+      <Badge tone="live">■ {address ? truncate(address) : ""}</Badge>
+      <button
+        onClick={() => disconnect()}
+        className="text-xs font-bold tracking-[0.1em] text-text-dim uppercase underline hover:text-text-bright focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-hard"
+      >
         Disconnect
       </button>
     </div>
