@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { activeMarkets, marketOnchain, outcomeSymbols, type DreamDexContext } from "@/lib/dreamdex/markets";
+import { activeMarkets, discoverVenues, marketOnchain, outcomeSymbols, type DreamDexContext } from "@/lib/dreamdex/markets";
 import type { UnifiedMarket } from "@somnia-chain/markets-sdk";
 
 function fakeMarket(overrides: Partial<UnifiedMarket> = {}): UnifiedMarket {
@@ -56,6 +56,39 @@ describe("activeMarkets", () => {
     };
 
     const result = await activeMarkets(ctx);
+    expect(result).toEqual([inScope]);
+  });
+});
+
+describe("discoverVenues", () => {
+  it("returns the sorted, de-duplicated venue ids present in a market list", () => {
+    const a = fakeMarket({ id: "0x1", info: { marketType: "BINARY", venueId: "0xB" } as unknown as UnifiedMarket["info"] });
+    const b = fakeMarket({ id: "0x2", info: { marketType: "BINARY", venueId: "0xA" } as unknown as UnifiedMarket["info"] });
+    const c = fakeMarket({ id: "0x3", info: { marketType: "BINARY", venueId: "0xA" } as unknown as UnifiedMarket["info"] });
+    expect(discoverVenues([a, b, c])).toEqual(["0xA", "0xB"]);
+  });
+
+  it("skips markets with no venueId", () => {
+    const noVenue = fakeMarket({ id: "0x1", info: { marketType: "BINARY" } as unknown as UnifiedMarket["info"] });
+    expect(discoverVenues([noVenue])).toEqual([]);
+  });
+});
+
+describe("activeMarkets venueId override", () => {
+  it("prefers an explicit opts.venueId over ctx.config.venueId", async () => {
+    const inScope = fakeMarket({ id: "0x1", info: { marketType: "BINARY", venueId: "0xREQUESTED" } as unknown as UnifiedMarket["info"] });
+    const outOfScope = fakeMarket({ id: "0x2", info: { marketType: "BINARY", venueId: "0xCONFIGURED" } as unknown as UnifiedMarket["info"] });
+    const ctx: DreamDexContext = {
+      config: { network: "testnet", chainId: 50312, rpcUrl: "", wsRpcUrl: "", indexerUrl: "", venueId: "0xCONFIGURED" },
+      exchange: {
+        loadMarkets: vi.fn().mockResolvedValue({ "0x1": inScope, "0x2": outOfScope }),
+        fetchOrderBook: vi.fn(),
+        fetchPrice: vi.fn(),
+        client: { getMarketOnchain: vi.fn(), getOpeningPrices: vi.fn() },
+      },
+    };
+
+    const result = await activeMarkets(ctx, { venueId: "0xREQUESTED" });
     expect(result).toEqual([inScope]);
   });
 });

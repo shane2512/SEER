@@ -32,22 +32,37 @@ function venueOf(m: UnifiedMarket): string | null {
   return info?.venueId ?? null;
 }
 
+/** The distinct venue ids present in a discovered market list, sorted for a
+ *  stable UI order. Markets with no venueId are skipped — they can't be
+ *  filtered to, so they'd be a meaningless entry in a venue selector. */
+export function discoverVenues(markets: UnifiedMarket[]): string[] {
+  const ids = new Set<string>();
+  for (const m of markets) {
+    const id = venueOf(m);
+    if (id) ids.add(id);
+  }
+  return Array.from(ids).sort();
+}
+
 /**
  * The venue's active binary (Event Contract) markets, optionally narrowed to
- * one underlying asset. Scoped to `config.venueId` when set — DreamDEX venue
- * ids move over time, so an unset venueId means "every active binary market
- * on this deployment" rather than a guess.
+ * one underlying asset and/or one venue. `opts.venueId` (typically the
+ * user's UI selection) takes precedence over `ctx.config.venueId` (the
+ * env-configured default, kept only for scripts like ec-doctor.ts) — an
+ * unset venueId on both means "every active binary market on this
+ * deployment" rather than a guess.
  */
 export async function activeMarkets(
   ctx: DreamDexContext,
-  opts: { asset?: "BTC" | "ETH" } = {},
+  opts: { asset?: "BTC" | "ETH"; venueId?: string } = {},
 ): Promise<UnifiedMarket[]> {
   const all = Object.values(await ctx.exchange.loadMarkets(true));
   let live = all.filter((m) => m.type === "binary" && m.active);
 
-  if (ctx.config.venueId) {
-    const venueId = ctx.config.venueId.toLowerCase();
-    live = live.filter((m) => (venueOf(m) ?? "").toLowerCase() === venueId);
+  const venueId = opts.venueId ?? ctx.config.venueId;
+  if (venueId) {
+    const scoped = venueId.toLowerCase();
+    live = live.filter((m) => (venueOf(m) ?? "").toLowerCase() === scoped);
   }
 
   if (opts.asset) {
