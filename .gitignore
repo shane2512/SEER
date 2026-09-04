@@ -43,3 +43,6 @@ next-env.d.ts
 
 # git worktrees
 .worktrees/
+
+# local Stitch design pull cache (see docs/superpowers/specs/2026-09-04-terminal-brutalism-design-system.md)
+.stitch-cache/

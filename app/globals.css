@@ -1,26 +1,154 @@
 @import "tailwindcss";
 
+/*
+ * Terminal Brutalism — SEER's design system.
+ *
+ * Pulled from the real Stitch project "Brutalist Minimal Trading
+ * Dashboard" (project 1897895306545728849) via the Stitch MCP connector's
+ * get_project call, not guessed from a screenshot. Full rationale and
+ * component specs: docs/superpowers/specs/2026-09-04-terminal-brutalism-design-system.md
+ *
+ * Two-tone monochrome baseline (pitch black / pure white) with a strict
+ * greyscale support set — zero chromatic color anywhere. State (long/short,
+ * yes/no, win/loss) is communicated via fill inversion and bracketed text
+ * tokens ([LONG], [SETTLED]), never hue. Every corner is a hard 90 degrees;
+ * --radius-* below all resolve to 0 for exactly that reason.
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surfaces */
+  --color-surface-base: #000000;
+  --color-surface-layer: #0a0a0a;
+  --color-surface-active: #1a1a1a;
+
+  /* Borders */
+  --color-border-hard: #ffffff;
+  --color-border-dim: #333333;
+
+  /* Text */
+  --color-text-bright: #ffffff;
+  --color-text-dim: #888888;
+  --color-text-inert: #444444;
+
+  /* Error stays legible even in a monochrome system — the DESIGN.md
+     reserves color exclusively for irrecoverable/destructive states, never
+     for routine market direction (that's fill inversion + text tokens). */
+  --color-error: #ffb4ab;
+
+  /* Spacing scale (DESIGN.md's own unit-N tokens) */
+  --spacing-unit-1: 0.25rem;
+  --spacing-unit-2: 0.5rem;
+  --spacing-unit-3: 0.75rem;
+  --spacing-unit-4: 1rem;
+  --spacing-unit-6: 1.5rem;
+  --spacing-unit-8: 2rem;
+  --spacing-unit-12: 3rem;
+  --spacing-unit-16: 4rem;
+  --spacing-grid-gutter: 1px;
+  --spacing-layout-margin-desktop: 1.5rem;
+  --spacing-layout-margin-mobile: 0.75rem;
+
+  /* Roundness: strictly orthogonal, no exceptions (DESIGN.md "Shapes") */
+  --radius-none: 0px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-background: var(--color-surface-base);
+  --color-foreground: var(--color-text-bright);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-surface-base: var(--color-surface-base);
+  --color-surface-layer: var(--color-surface-layer);
+  --color-surface-active: var(--color-surface-active);
+  --color-border-hard: var(--color-border-hard);
+  --color-border-dim: var(--color-border-dim);
+  --color-text-bright: var(--color-text-bright);
+  --color-text-dim: var(--color-text-dim);
+  --color-text-inert: var(--color-text-inert);
+  --color-error: var(--color-error);
+
+  --font-sans: var(--font-space-mono);
+  --font-mono: var(--font-jetbrains-mono);
+
+  /* Type scale — display/headline/body in Space Mono, data/labels in
+     JetBrains Mono with tabular figures forced on for column stability. */
+  --text-display-lg: 56px;
+  --text-display-lg--line-height: 60px;
+  --text-display-lg--letter-spacing: -0.04em;
+  --text-display-lg--font-weight: 700;
+
+  --text-headline-xl: 40px;
+  --text-headline-xl--line-height: 48px;
+  --text-headline-xl--letter-spacing: -0.03em;
+  --text-headline-xl--font-weight: 700;
+
+  --text-headline-lg: 24px;
+  --text-headline-lg--line-height: 30px;
+  --text-headline-lg--letter-spacing: -0.02em;
+  --text-headline-lg--font-weight: 700;
+
+  --text-headline-sm: 18px;
+  --text-headline-sm--line-height: 24px;
+  --text-headline-sm--letter-spacing: -0.01em;
+  --text-headline-sm--font-weight: 700;
+
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+  --text-body-lg--font-weight: 400;
+
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 20px;
+  --text-body-sm--font-weight: 400;
+
+  --text-data-lg: 18px;
+  --text-data-lg--line-height: 22px;
+  --text-data-lg--letter-spacing: -0.02em;
+  --text-data-lg--font-weight: 700;
+  --text-data-lg--font-family: var(--font-jetbrains-mono);
+
+  --text-data-md: 14px;
+  --text-data-md--line-height: 18px;
+  --text-data-md--font-weight: 500;
+  --text-data-md--font-family: var(--font-jetbrains-mono);
+
+  --text-data-sm: 12px;
+  --text-data-sm--line-height: 16px;
+  --text-data-sm--letter-spacing: 0.02em;
+  --text-data-sm--font-weight: 400;
+  --text-data-sm--font-family: var(--font-jetbrains-mono);
+
+  --text-label-caps: 11px;
+  --text-label-caps--line-height: 14px;
+  --text-label-caps--letter-spacing: 0.1em;
+  --text-label-caps--font-weight: 700;
+  --text-label-caps--font-family: var(--font-jetbrains-mono);
+
+  /* Radius: every scale name resolves to 0. Defined as a full scale (not a
+     single override) so `rounded-*` utilities stay available in markup for
+     readability while never actually rounding anything. */
+  --radius-none: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-full: 0px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-surface-base);
+  color: var(--color-text-bright);
+}
+
+/* Tabular figures everywhere numeric — price ladders, timestamps, PnL,
+   liquidity ticks (DESIGN.md "Typographic hierarchy guidelines"). */
+.font-mono,
+[data-numeric] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hard offset shadow for primary execution controls / floating windows —
+   zero blur, diagrammatic depth only (DESIGN.md "Elevation & Depth"). No
+   Tailwind shadow-* utility produces this; kept as a plain class instead of
+   an arbitrary-value utility since it's reused across every primary CTA. */
+.shadow-hard {
+  box-shadow: 4px 4px 0px 0px var(--color-border-hard);
 }

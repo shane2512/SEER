@@ -10,7 +10,7 @@ SEER (Structured Event Evaluation \& Reasoning) is a Somnia Testnet application 
 
 
 
-The primary objective is a \*\*reliable 5-day hackathon MVP\*\*, not a production-grade trading platform.
+SEER started as a 5-day hackathon MVP. The project now has runway to scale beyond that — see section 16 (Scope) — but it is still not aiming to be a production-grade trading platform: every addition must trace back to making the real DreamDEX/Somnia integration more credible and more usable, not to feature breadth for its own sake.
 
 
 
@@ -962,11 +962,15 @@ SEED\_PHRASE=...
 
 
 
-Use TailwindCSS.
+Use TailwindCSS. The product's design system is \*\*Terminal Brutalism\*\*, sourced from a real Stitch design (project `1897895306545728849`) and documented in `docs/superpowers/specs/2026-09-04-terminal-brutalism-design-system.md` — read that spec before touching any component. Strict two-tone monochrome (pitch black / pure white, zero chromatic color except a single reserved error red), hard 90-degree corners everywhere, Space Mono for display/headline/body, JetBrains Mono for tabular data and labels, diagrammatic (non-blurred) depth via plane inversion and offset hard shadows.
 
 
 
-Prioritize:
+This supersedes the earlier "avoid unnecessary animations / complicated dashboards" minimalism stance — the project has scaled beyond a bare hackathon MVP and a considered, motion-capable, visually distinctive UI is now the goal, not a risk to trim.
+
+
+
+What still applies regardless of visual ambition:
 
 
 
@@ -982,23 +986,7 @@ Prioritize:
 
 \* obvious transaction status
 
-
-
-Avoid:
-
-
-
-\* unnecessary animations
-
-\* complicated dashboards
-
-\* excessive gradients
-
-\* decorative components with no information value
-
-
-
-The judge must understand the product within five seconds.
+\* every label and data binding reflects what SEER actually does — never port a mockup's placeholder copy (a fictional model name, a fictional signing mechanism, fabricated sample data) verbatim into real UI. Visual scale-up is not license for technical fabrication; CLAUDE.md's non-negotiable constraints (section 1) still govern absolutely.
 
 
 
@@ -1082,35 +1070,29 @@ UI telemetry
 
 
 
-\# 16. Five-Day Rule
+\# 16. Scope
+
+(Formerly "Five-Day Rule." The project now has runway to scale beyond a bare hackathon MVP — this section governs direction, not a deadline.)
 
 
 
-Every implementation decision must answer:
+Every implementation decision must still answer:
 
 
 
-> "Does this increase the probability that the judge sees a working end-to-end DreamDEX Event Contract product?"
+> "Does this increase the probability that a visitor sees a working, technically credible, real DreamDEX Event Contract product?"
 
 
 
-If no, defer it.
+If no, defer it. Scaling up means investing more in \*\*making the real thing better\*\* — design system depth, UI polish, a proper landing page, richer market/history views — not in features that are impressive-sounding but disconnected from the actual DreamDEX/Somnia integration.
 
 
 
-Do not add:
+Still out of scope unless a specific, real need is identified first:
 
 
 
-\* complex authentication
-
-\* databases unless necessary
-
-\* multi-chain support
-
-\* mobile applications
-
-\* advanced AI memory
+\* multi-chain support (testnet-only remains non-negotiable, section 1)
 
 \* autonomous multi-strategy trading
 
@@ -1120,11 +1102,9 @@ Do not add:
 
 \* unnecessary tokenomics
 
-\* production-grade infrastructure
 
 
-
-The objective is a \*\*small, demonstrably real, technically credible MVP\*\*.
+Databases, complex auth, mobile apps, and production-grade infrastructure are no longer blanket-excluded — add them when a real requirement calls for one, not preemptively.
 
 
 
