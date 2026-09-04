@@ -61,15 +61,24 @@ export async function POST(request: Request) {
     // maximum confidence on a garbage number — exactly the failure this check
     // exists to prevent. 0.5x-2x catches that case while staying generous
     // enough for genuine strike/spot movement over a market's lifetime.
-    const strikeRatio = view.referenceKind === "strike" ? view.referencePrice / momentum.spot : null;
-    const strikeLooksPlausible = strikeRatio !== null && strikeRatio > 0.5 && strikeRatio < 2;
-    if (view.referenceKind === "strike" && !strikeLooksPlausible) {
+    // NOTE (found live, testing against real markets): this plausibility gate
+    // originally only ran for referenceKind === "strike", forcing every
+    // "opening" (up/down) market into pure momentum mode unconditionally.
+    // That's wrong — an opening price is exactly as valid a reference level
+    // as a fixed strike (both are "what spot is compared against" for the
+    // same moneyness math in estimateUp), and in practice essentially every
+    // currently-live DreamDEX Event Contract is an up/down market, so the
+    // strike-aware model was never engaging against real markets at all.
+    // The gate now applies to both reference kinds identically.
+    const strikeRatio = view.referencePrice / momentum.spot;
+    const strikeLooksPlausible = strikeRatio > 0.5 && strikeRatio < 2;
+    if (!strikeLooksPlausible) {
       console.log(
-        `[SIGNAL] ${view.marketId} strike ${view.referencePrice} implausible next to spot ${momentum.spot} ` +
-          `(ratio ${strikeRatio?.toFixed(3)}) — falling back to momentum mode until Task 22 confirms the real scale`,
+        `[SIGNAL] ${view.marketId} reference ${view.referencePrice} implausible next to spot ${momentum.spot} ` +
+          `(ratio ${strikeRatio.toFixed(3)}) — falling back to momentum mode until real-scale confirmation`,
       );
     }
-    const useStrikeModel = view.referenceKind === "strike" && strikeLooksPlausible;
+    const useStrikeModel = strikeLooksPlausible;
 
     const estimate = estimateUp({
       spot: momentum.spot,

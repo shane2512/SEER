@@ -67,7 +67,19 @@ export async function normalizeMarkets(
 
     const boundary = boundaryPrice({ id: info.id, strike: info.strike, mode: info.mode }, openingPrices);
     const referenceKind: "strike" | "opening" = info.mode === "reference" ? "opening" : "strike";
-    const referencePrice = boundary ? Number(boundary.raw) : null;
+    // Scale confirmed live against real spot data (2026-09-04), not guessed:
+    // an "opening" market's boundary.raw of 7935580 corresponds to real BTC
+    // spot $79,323.81 (7935580/100 = 79355.80, within 0.04%); 245207
+    // corresponds to real ETH spot $2,450.15 (245207/100 = 2452.07, within
+    // 0.08%). Applied to "strike" mode too — both share the same underlying
+    // oracle price scale per the SDK's own docs (BinaryMarket.strike and the
+    // getOpeningPrices answer are each described as "raw, in the oracle's
+    // price scale"), though no live "strike"-mode market existed to verify
+    // that half directly. An earlier attempt at this scaling cited an
+    // unrelated SDK function's docstring and was reverted for guessing; this
+    // one is grounded in an actual live comparison instead.
+    const ORACLE_PRICE_SCALE = 100;
+    const referencePrice = boundary ? Number(boundary.raw) / ORACLE_PRICE_SCALE : null;
 
     const { yes } = outcomeSymbols(market);
     const book = await ctx.exchange.fetchOrderBook(yes, 3);

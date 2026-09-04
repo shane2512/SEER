@@ -13,7 +13,9 @@ function fixedStrikeMarket(): UnifiedMarket {
       { symbol: "BTC-95000-31DEC26/USDC#YES", label: "YES", index: 0 },
       { symbol: "BTC-95000-31DEC26/USDC#NO", label: "NO", index: 1 },
     ],
-    info: { marketType: "BINARY", id: "0xfixed", asset: "BTC", strike: "95000", mode: "fixed" },
+    // 9500000 / ORACLE_PRICE_SCALE(100) = 95000 -- the oracle's raw price
+    // scale, confirmed live (see event-contracts.ts's comment).
+    info: { marketType: "BINARY", id: "0xfixed", asset: "BTC", strike: "9500000", mode: "fixed" },
   } as unknown as UnifiedMarket;
 }
 
@@ -76,7 +78,8 @@ describe("normalizeMarkets", () => {
 
     const views = await normalizeMarkets(ctx, [referenceMarket()], {
       // injected opening-price fetcher — overrides the ctx.exchange.client default
-      fetchOpeningPrices: async () => ({ "0xref": "350000" }),
+      // 35000000 / ORACLE_PRICE_SCALE(100) = 350000
+      fetchOpeningPrices: async () => ({ "0xref": "35000000" }),
     });
     const view = views[0]!;
 
