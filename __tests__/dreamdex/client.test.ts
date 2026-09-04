@@ -1,5 +1,23 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { loadDreamDexConfig, createDreamDexExchange, parsePositiveNumber, resolveSomniaChain } from "@/lib/dreamdex/client";
+
+// This mock is what closes the actual gap that shipped to production:
+// createDreamDexExchange's config was never checked against the real
+// SomniaMarkets constructor by any test — every other test in this project
+// works against the narrow DreamDexExchange interface instead, which never
+// exercises the real `new SomniaMarkets(config)` call at all. Both
+// `addresses` and `priceFeed` were missing from that config from the very
+// first commit; every unit test passed and the whole build/review process
+// caught it, because nothing ever inspected this specific object. It only
+// surfaced live, against the real testnet, as NotConfiguredError on every
+// on-chain read and every price-feed read.
+vi.mock("@somnia-chain/markets-sdk", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@somnia-chain/markets-sdk")>();
+  return {
+    ...actual,
+    SomniaMarkets: vi.fn(),
+  };
+});
 
 describe("loadDreamDexConfig", () => {
   it("reads chain/rpc from env with testnet defaults", () => {
@@ -71,6 +89,22 @@ describe("createDreamDexExchange", () => {
   it("throws when withSigner is requested but no privateKey is configured", () => {
     const config = loadDreamDexConfig({} as unknown as NodeJS.ProcessEnv);
     expect(() => createDreamDexExchange(config, { withSigner: true })).toThrow(/BOT_OPERATOR_PRIVATE_KEY/);
+  });
+
+  it("passes real testnet addresses and a price feed to the SDK — regression test for a live NotConfiguredError incident", async () => {
+    const { SomniaMarkets, SOMNIA_TESTNET_ADDRESSES, SOMNIA_TESTNET_PRICE_FEED } = await import(
+      "@somnia-chain/markets-sdk"
+    );
+    const config = loadDreamDexConfig({ NEXT_PUBLIC_SOMNIA_CHAIN_ID: "50312" } as unknown as NodeJS.ProcessEnv);
+
+    createDreamDexExchange(config);
+
+    expect(SomniaMarkets).toHaveBeenCalledWith(
+      expect.objectContaining({
+        addresses: SOMNIA_TESTNET_ADDRESSES,
+        priceFeed: SOMNIA_TESTNET_PRICE_FEED,
+      }),
+    );
   });
 });
 

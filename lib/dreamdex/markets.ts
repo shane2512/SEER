@@ -66,7 +66,8 @@ export async function activeMarkets(
 export async function marketOnchain(ctx: DreamDexContext, market: UnifiedMarket): Promise<MarketOnchain | null> {
   try {
     return await ctx.exchange.client.getMarketOnchain(market.id as `0x${string}`);
-  } catch {
+  } catch (err) {
+    console.error(`[MARKET] on-chain read failed for ${market.symbol}:`, err);
     return null;
   }
 }

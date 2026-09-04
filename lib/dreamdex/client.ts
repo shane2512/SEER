@@ -1,4 +1,9 @@
-import { SomniaMarkets, type SomniaMarketsConfig } from "@somnia-chain/markets-sdk";
+import {
+  SOMNIA_TESTNET_ADDRESSES,
+  SOMNIA_TESTNET_PRICE_FEED,
+  SomniaMarkets,
+  type SomniaMarketsConfig,
+} from "@somnia-chain/markets-sdk";
 import { getSomniaChain, defineChain, type Chain } from "@somnia-chain/markets-sdk/chains";
 
 export interface DreamDexConfig {
@@ -122,6 +127,19 @@ export function createDreamDexExchange(
     indexerUrl: config.indexerUrl,
     chain,
     wsRpcUrl: config.wsRpcUrl,
+    // Protocol contract addresses — "all optional — features degrade if
+    // unset" per the SDK's own docs, which is exactly what happened here:
+    // exchange.client.getMarketOnchain() silently required
+    // addresses.binaryModule and threw NotConfiguredError for every real
+    // market, with no test ever catching it because every unit test mocks
+    // the SDK entirely. Testnet-only (SEER's non-negotiable constraint) —
+    // SOMNIA_MAINNET_ADDRESSES is never used.
+    addresses: SOMNIA_TESTNET_ADDRESSES,
+    // Same class of gap as addresses above: exchange.fetchPrice(asset) (the
+    // BTC/ETH spot feed the evaluator's strike/momentum model depends on)
+    // requires config.priceFeed and throws NotConfiguredError without it.
+    // Testnet-only, matching this config's non-negotiable scope.
+    priceFeed: SOMNIA_TESTNET_PRICE_FEED,
     privateKey: opts.withSigner ? config.privateKey : undefined,
   };
 
