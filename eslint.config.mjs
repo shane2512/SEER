@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // A git worktree checked out under the repo root carries its own full
+    // copy of this project (including its own node_modules once installed) —
+    // without this, `next lint`/eslint scans it as if it were source, same
+    // class of bug as vitest's default excludes not knowing about it either.
+    ".worktrees/**",
   ]),
 ]);
 

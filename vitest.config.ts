@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 
@@ -8,6 +8,13 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
+    // Without this, vitest's default excludes (node_modules, dist, .git, ...)
+    // don't know about .worktrees/ — a git worktree checked out under the repo
+    // root carries its own full copy of every test file, so running from the
+    // repo root silently doubles the whole suite (and any flake in it) rather
+    // than erroring. Only surfaced once tests were run from outside the
+    // worktree itself, where this had never been exercised before.
+    exclude: [...configDefaults.exclude, "**/.worktrees/**"],
     // vitest's own diagnostic: recreating a jsdom environment per file (the
     // default) under the default pool showed up as ~70% of total run time
     // and produced a real, reproducible-under-load flake in the full-suite
