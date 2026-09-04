@@ -52,4 +52,33 @@ describe("POST /api/evaluate", () => {
     const response = await POST(makeRequest({ marketId: "0xnotfound" }));
     expect(response.status).toBe(404);
   });
+
+  it("falls back to momentum mode (and an honest rationale) when the strike is implausible next to live spot", async () => {
+    const { normalizeMarkets } = await import("@/lib/dreamdex/event-contracts");
+    vi.mocked(normalizeMarkets).mockResolvedValueOnce([
+      {
+        marketId: "0xabc",
+        symbol: "BTC-95000-31DEC26/USDC",
+        asset: "BTC",
+        referenceKind: "strike",
+        referencePrice: 9_500_000, // ~99x spot (96_000) -- clearly implausible
+        expiryMs: Date.now() + 300_000,
+        status: "Trading",
+        yesBid: 0.6,
+        yesAsk: 0.62,
+        yesMid: 0.61,
+        spread: 0.02,
+      },
+    ]);
+
+    const { POST } = await import("@/app/api/evaluate/route");
+    const response = await POST(makeRequest({ marketId: "0xabc" }));
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    // The rationale must NOT cite the distrusted $9,500,000 strike, and must
+    // say why -- this is the only externally observable signal that momentum
+    // mode actually ran (see toDecision's estimate.anchored branch).
+    expect(body.decision.rationale).not.toContain("9,500,000");
+    expect(body.decision.rationale).toMatch(/could not be confirmed|market's own implied probability/i);
+  });
 });

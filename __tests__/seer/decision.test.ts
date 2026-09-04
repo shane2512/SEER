@@ -56,4 +56,14 @@ describe("toDecision", () => {
     expect(d.marketId).toBe("0xabc");
     expect(d.timestamp).toBe(1_800_000_000_000);
   });
+
+  it("does NOT cite the reference price in the rationale when estimate.anchored is true (the momentum fallback ran)", () => {
+    // anchored: true means estimateUp() took the fallback branch — the
+    // caller judged referencePrice too unreliable to trust (see Task 14).
+    // The rationale must not cite it as if it were a confirmed number.
+    const d = toDecision(ctx(0.08, { estimate: { pUp: 0.58, tilt: 0.08, anchored: true } }));
+    expect(d.rationale).not.toContain("63,500");
+    expect(d.rationale).toContain("63,912"); // spot is still real data, fine to cite
+    expect(d.rationale).toMatch(/could not be confirmed|market's own implied probability/i);
+  });
 });

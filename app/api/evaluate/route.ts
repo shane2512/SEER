@@ -49,14 +49,20 @@ export async function POST(request: Request) {
     // A wrong scale would make moneyness = (spot - strike) / strike swing to
     // +/-infinity and saturate estimateUp's clamp, producing a confident-looking
     // but meaningless BULLISH/BEARISH. Rather than trust an unverified strike
-    // outright, sanity-check it against the live spot price we already have:
-    // a real BTC/ETH strike struck "around the money" should sit within an
-    // order of magnitude of spot (same principle ec-core's scaleStrike() uses
-    // to infer scale). Outside that range, fall back to momentum mode — still
-    // a real, honest signal (anchored on the market's own implied probability),
-    // just without the unverified strike comparison.
+    // outright, sanity-check it against the live spot price we already have.
+    //
+    // The band is deliberately TIGHT (0.5x-2x), not the full order-of-magnitude
+    // ec-core's scaleStrike() uses for scale INFERENCE (that function is
+    // choosing between candidate scales, not judging plausibility — a wider
+    // band there is fine). These are short-dated, near-the-money event
+    // contracts: a real strike sits close to spot, not merely "same order of
+    // magnitude." A review of an earlier, wider (0.1x-10x) band found it let a
+    // ~10x-wrong strike through, which still saturated estimateUp's clamp to
+    // maximum confidence on a garbage number — exactly the failure this check
+    // exists to prevent. 0.5x-2x catches that case while staying generous
+    // enough for genuine strike/spot movement over a market's lifetime.
     const strikeRatio = view.referenceKind === "strike" ? view.referencePrice / momentum.spot : null;
-    const strikeLooksPlausible = strikeRatio !== null && strikeRatio > 0.1 && strikeRatio < 10;
+    const strikeLooksPlausible = strikeRatio !== null && strikeRatio > 0.5 && strikeRatio < 2;
     if (view.referenceKind === "strike" && !strikeLooksPlausible) {
       console.log(
         `[SIGNAL] ${view.marketId} strike ${view.referencePrice} implausible next to spot ${momentum.spot} ` +
