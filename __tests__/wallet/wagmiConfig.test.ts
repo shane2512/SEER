@@ -10,4 +10,8 @@ describe("wagmiConfig", () => {
   it("registers exactly one (injected) connector", () => {
     expect(wagmiConfig.connectors).toHaveLength(1);
   });
+
+  it("enables ssr mode — without it, a previously-connected wallet's persisted state resolves before hydration on the client but not on the server, producing a real hydration mismatch (caught live in ConnectWalletButton)", () => {
+    expect(wagmiConfig._internal.ssr).toBe(true);
+  });
 });
