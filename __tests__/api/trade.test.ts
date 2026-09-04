@@ -18,14 +18,17 @@ vi.mock("@/lib/bot/context", () => ({
   requireOperatorConfig: vi.fn().mockReturnValue({ network: "testnet", chainId: 50312, rpcUrl: "", wsRpcUrl: "", indexerUrl: "", privateKey: "0xkey" }),
   loadRiskLimits: vi.fn().mockReturnValue({ maxOrderSize: 20, maxPriceDeviation: 0.05 }),
 }));
+const mockCreateOrder = vi.fn().mockResolvedValue({ id: "1", status: "closed", filled: 5, price: 0.62, txHash: "0xTX" });
 vi.mock("@/lib/dreamdex/client", () => ({
-  createDreamDexExchange: vi.fn().mockReturnValue({ createOrder: vi.fn().mockResolvedValue({ id: "1", status: "closed", filled: 5, price: 0.62, txHash: "0xTX" }) }),
+  createDreamDexExchange: vi.fn().mockReturnValue({ createOrder: mockCreateOrder }),
 }));
-// Partial mock: lib/bot/execution.ts (Task 10's submitTrade) imports the real
-// `outcomeSymbols` from this same module by relative path, and vi.mock
-// replaces by resolved file, not by import specifier — a full replacement
-// here would silently drop `outcomeSymbols` out from under submitTrade too.
-// Keep the real exports and stub only what this route test needs to control.
+// Partial mock, not a full replacement: lib/bot/execution.ts's submitTrade
+// imports outcomeSymbols from this SAME module by relative path, and Vitest
+// mocks resolve by file path, not import specifier — a full mock here (just
+// { activeMarkets: ... }) silently drops outcomeSymbols too, which makes
+// submitTrade throw for every call and the route's catch-all swallow it into
+// a spurious 502. Keep the real (pure) exports via importOriginal, stub only
+// activeMarkets.
 vi.mock("@/lib/dreamdex/markets", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/dreamdex/markets")>();
   return {
@@ -48,6 +51,17 @@ describe("POST /api/trade", () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(["submitted", "confirmed"]).toContain(body.state.status);
+    // Reaching the mock alone doesn't prove the SYMBOL/PRICE sent to the
+    // venue were right — assert on the actual call arguments. yesAsk 0.62 ->
+    // cross = min(0.99, 0.62+0.002) = 0.622.
+    expect(mockCreateOrder).toHaveBeenCalledWith(
+      "BTC-95000-31DEC26/USDC#YES",
+      "limit",
+      "buy",
+      5,
+      expect.closeTo(0.622, 5),
+      { timeInForce: "IOC" },
+    );
   });
 
   it("returns 422 with the guardrail reason when validation fails", async () => {
