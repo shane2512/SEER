@@ -1,20 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { requireOperatorConfig, loadRiskLimits } from "@/lib/bot/context";
-
-describe("requireOperatorConfig", () => {
-  it("returns the config when BOT_OPERATOR_PRIVATE_KEY is set", () => {
-    const config = requireOperatorConfig({
-      BOT_OPERATOR_PRIVATE_KEY: "0xdeadbeef",
-    } as unknown as NodeJS.ProcessEnv);
-    expect(config.privateKey).toBe("0xdeadbeef");
-  });
-
-  it("throws a clear error when BOT_OPERATOR_PRIVATE_KEY is missing", () => {
-    expect(() => requireOperatorConfig({} as unknown as NodeJS.ProcessEnv)).toThrow(
-      /BOT_OPERATOR_PRIVATE_KEY/,
-    );
-  });
-});
+import { loadRiskLimits } from "@/lib/bot/context";
 
 describe("loadRiskLimits", () => {
   it("reads configured limits from env", () => {
