@@ -23,21 +23,53 @@ const decision = {
   timestamp: Date.now(),
 };
 
-const mockFetch = vi.fn((url: string, init?: RequestInit) => {
-  if (url === "/api/markets") return Promise.resolve({ ok: true, json: async () => ({ markets: [market] }) });
+const mockFetch = vi.fn((url: string) => {
+  if (url.startsWith("/api/markets")) return Promise.resolve({ ok: true, json: async () => ({ markets: [market], venueIds: [] }) });
   if (url === "/api/evaluate") return Promise.resolve({ ok: true, json: async () => ({ decision }) });
-  if (url === "/api/trade") {
-    return Promise.resolve({
-      ok: true,
-      json: async () => ({ state: { status: "confirmed", txHash: "0xTX", filled: 5, price: 0.62 } }),
-    });
-  }
+  if (url === "/api/trade/validate") return Promise.resolve({ ok: true, json: async () => ({ ok: true, market }) });
   return Promise.resolve({ ok: true, json: async () => ({}) });
 });
 vi.stubGlobal("fetch", mockFetch as unknown as typeof fetch);
 
+const mockUseWallet = vi.fn();
+vi.mock("@/hooks/useWallet", () => ({ useWallet: () => mockUseWallet() }));
+
+const mockCreateOrder = vi.fn().mockResolvedValue({ id: "1", status: "closed", filled: 5, price: 0.62, txHash: "0xTX" });
+vi.mock("@/hooks/useBrowserExchange", () => ({
+  useBrowserExchange: () => ({ createOrder: mockCreateOrder, client: { getErc20Balance: vi.fn(), getErc20Metadata: vi.fn() } }),
+}));
+vi.mock("@/lib/dreamdex/browserClient", () => ({
+  createBrowserDreamDexExchange: () => ({ createOrder: mockCreateOrder }),
+}));
+vi.mock("wagmi", () => ({
+  useWalletClient: () => ({ data: { account: { address: "0xABC" }, chain: { id: 50312 } } }),
+}));
+// FundingCard/useBalances have their own dedicated tests (Task 10) —
+// stub healthy balances here so this test stays focused on wallet-gating
+// and the trade flow, and so it never makes a real viem network call.
+vi.mock("@/hooks/useBalances", () => ({
+  useBalances: () => ({ stt: null, tUsdc: null, sttLow: false, tUsdcLow: false, refetch: vi.fn() }),
+}));
+
 describe("DashboardPage", () => {
-  it("renders the market, its signal, and lets the user execute a trade", async () => {
+  it("prompts wallet connection instead of showing the trade panel when disconnected", async () => {
+    mockUseWallet.mockReturnValue({
+      address: undefined, isConnected: false, isWrongNetwork: false, isConnecting: false, isSwitching: false,
+      connect: vi.fn(), disconnect: vi.fn(), switchToSomnia: vi.fn(),
+    });
+    const { default: DashboardPage } = await import("@/app/dashboard/page");
+    render(<DashboardPage />);
+
+    await waitFor(() => expect(screen.getByText("BULLISH")).toBeInTheDocument());
+    expect(screen.getByText(/connect your wallet to trade/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^execute/i })).not.toBeInTheDocument();
+  });
+
+  it("renders the market, its signal, and lets a connected user execute a trade", async () => {
+    mockUseWallet.mockReturnValue({
+      address: "0xABC", isConnected: true, isWrongNetwork: false, isConnecting: false, isSwitching: false,
+      connect: vi.fn(), disconnect: vi.fn(), switchToSomnia: vi.fn(),
+    });
     const { default: DashboardPage } = await import("@/app/dashboard/page");
     render(<DashboardPage />);
 
@@ -50,12 +82,14 @@ describe("DashboardPage", () => {
   });
 
   it("shows a retryable error, not a silently stuck feed, when evaluation fails", async () => {
+    mockUseWallet.mockReturnValue({
+      address: "0xABC", isConnected: true, isWrongNetwork: false, isConnecting: false, isSwitching: false,
+      connect: vi.fn(), disconnect: vi.fn(), switchToSomnia: vi.fn(),
+    });
     mockFetch.mockImplementationOnce((url: string) =>
-      // this call is the /api/markets fetch on mount
-      Promise.resolve({ ok: true, json: async () => ({ markets: [market] }) } as Response),
+      Promise.resolve({ ok: true, json: async () => ({ markets: [market], venueIds: [] }) } as Response),
     );
     mockFetch.mockImplementationOnce((url: string) =>
-      // this call is the /api/evaluate fetch, which fails
       Promise.resolve({ ok: true, json: async () => ({ error: "no live price feed reading for this asset" }) } as Response),
     );
 

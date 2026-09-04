@@ -31,9 +31,9 @@ export function ReasoningFeed({ tradeState, hasDecision }: { tradeState: TradeSt
         ))}
       </ol>
       <p className="mt-3 text-xs text-slate-400">
-        Trades execute from a dedicated, demo-funded server wallet. DreamDEX&apos;s on-chain
-        owner/operator split isn&apos;t available for Event Contract markets yet, so this key signs
-        directly — it never reaches the browser.
+        Trades are signed by your own connected wallet — SEER never holds or
+        sees your private key. The wallet extension prompts you to approve
+        each order before it submits.
       </p>
     </div>
   );
