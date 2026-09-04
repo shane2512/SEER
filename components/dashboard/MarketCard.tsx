@@ -21,6 +21,8 @@ export function MarketCard({ market }: { market: MarketView }) {
           {market.yesBid !== null ? market.yesBid.toFixed(2) : "—"} /{" "}
           {market.yesAsk !== null ? market.yesAsk.toFixed(2) : "—"}
         </dd>
+        <dt className="text-slate-500">Spread</dt>
+        <dd>{market.spread !== null ? market.spread.toFixed(3) : "—"}</dd>
       </dl>
     </Card>
   );

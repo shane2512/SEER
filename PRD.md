@@ -124,9 +124,10 @@ Restated from REQUIREMENTS.md, unchanged in substance, grounded in the verified 
   `{ marketId, direction, confidence, rationale, timestamp }`, deterministic given
   the same normalized input, and is architecturally separated from execution.
 - **FR-07** — Every trade request is validated: market exists, is `Trading`, has
-  not expired (headroom scaled to the market's own interval, not a fixed
-  threshold), side valid, size ≤ configured limit, price within bounds, operator
-  authorized.
+  not expired (a flat 30-second headroom floor — not scaled per-cadence, since
+  `MarketView` doesn't carry the market's own interval field true scaling would
+  need; see `lib/bot/permissions.ts`'s `MIN_HEADROOM_MS`), side valid, size ≤
+  configured limit, price within bounds, operator authorized.
 
 ---
 
@@ -212,9 +213,11 @@ REQUIREMENTS.md §9 and CLAUDE.md §12:
   live book.
 - Market must resolve on-chain to status `Trading` (never the indexer's cached
   status).
-- Time remaining must exceed the venue's scaled headroom (a fraction of the
-  market's own interval, not a fixed threshold — a fixed 300s threshold would
-  reject every market on a 5-minute venue).
+- Time remaining must exceed a flat 30-second headroom floor
+  (`MIN_HEADROOM_MS` in `lib/bot/permissions.ts`). This is a flat floor, not
+  per-cadence scaling — `MarketView` doesn't carry the market's own interval
+  field that true scaling would need, and a 30s floor is a safe minimum for
+  every cadence this venue runs today (shortest is ~1 minute).
 - Side, quantity, and price must all validate before any signing occurs.
 - Operator authorization is a precondition, not an assumption.
 
