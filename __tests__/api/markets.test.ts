@@ -5,9 +5,17 @@ vi.mock("@/lib/dreamdex/client", () => ({
   loadDreamDexConfig: vi.fn().mockReturnValue({ network: "testnet", chainId: 50312, rpcUrl: "", wsRpcUrl: "", indexerUrl: "" }),
   createDreamDexExchange: vi.fn().mockReturnValue({}),
 }));
-vi.mock("@/lib/dreamdex/markets", () => ({
-  activeMarkets: vi.fn().mockResolvedValue([{ id: "0x1", symbol: "BTC-95000-31DEC26/USDC" }]),
-}));
+// Partial mock: discoverVenues must run for real so the route's venueIds
+// field reflects the mocked markets, not a stub.
+vi.mock("@/lib/dreamdex/markets", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/dreamdex/markets")>();
+  return {
+    ...actual,
+    activeMarkets: vi.fn().mockResolvedValue([
+      { id: "0x1", symbol: "BTC-95000-31DEC26/USDC", info: { venueId: "0xVENUE1" } },
+    ]),
+  };
+});
 vi.mock("@/lib/dreamdex/event-contracts", () => ({
   normalizeMarkets: vi.fn().mockResolvedValue([
     {
@@ -26,14 +34,26 @@ vi.mock("@/lib/dreamdex/event-contracts", () => ({
   ]),
 }));
 
+function makeRequest(query = "") {
+  return new Request(`http://localhost/api/markets${query}`);
+}
+
 describe("GET /api/markets", () => {
-  it("returns normalized markets as JSON", async () => {
+  it("returns normalized markets and the discovered venue ids as JSON", async () => {
     const { GET } = await import("@/app/api/markets/route");
-    const response = await GET();
+    const response = await GET(makeRequest());
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.markets).toHaveLength(1);
     expect(body.markets[0].symbol).toBe("BTC-95000-31DEC26/USDC");
+    expect(body.venueIds).toEqual(["0xVENUE1"]);
+  });
+
+  it("forwards a ?venueId= query param to activeMarkets for the scoped fetch", async () => {
+    const { activeMarkets } = await import("@/lib/dreamdex/markets");
+    const { GET } = await import("@/app/api/markets/route");
+    await GET(makeRequest("?venueId=0xVENUE1"));
+    expect(vi.mocked(activeMarkets)).toHaveBeenCalledWith(expect.anything(), { venueId: "0xVENUE1" });
   });
 
   it("returns a 502 with a structured error when the exchange read fails", async () => {
@@ -41,7 +61,7 @@ describe("GET /api/markets", () => {
     vi.mocked(activeMarkets).mockRejectedValueOnce(new Error("indexer unavailable"));
 
     const { GET } = await import("@/app/api/markets/route");
-    const response = await GET();
+    const response = await GET(makeRequest());
     expect(response.status).toBe(502);
     const body = await response.json();
     expect(body.error).toMatch(/market/i);
