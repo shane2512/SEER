@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
-import { requireOperatorConfig, loadRiskLimits } from "@/lib/bot/context";
-import { createDreamDexExchange } from "@/lib/dreamdex/client";
+import { loadDreamDexConfig, createDreamDexExchange } from "@/lib/dreamdex/client";
+import { loadRiskLimits } from "@/lib/bot/context";
 import { activeMarkets, type DreamDexContext } from "@/lib/dreamdex/markets";
 import { normalizeMarkets } from "@/lib/dreamdex/event-contracts";
 import { validateTrade } from "@/lib/bot/permissions";
-import { submitTrade, type TradeExecutor } from "@/lib/bot/execution";
 import { tradeRequestSchema } from "@/lib/seer/validation";
-import type { TradeState } from "@/lib/blockchain/transactions";
 
+/**
+ * Guardrail-only check — no signer, no order submission. The browser calls
+ * this first; on ok:true it signs and submits the returned `market` snapshot
+ * itself via its own connected wallet (see hooks/useTrade.ts). Returning the
+ * exact MarketView that was just validated (rather than the browser
+ * re-fetching its own) guarantees the price used for the real order matches
+ * what the guardrails actually checked.
+ */
 export async function POST(request: Request) {
   const parsed = tradeRequestSchema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) {
@@ -16,9 +22,9 @@ export async function POST(request: Request) {
   const tradeRequest = parsed.data;
 
   try {
-    const config = requireOperatorConfig();
+    const config = loadDreamDexConfig();
     const limits = loadRiskLimits();
-    const exchange = createDreamDexExchange(config, { withSigner: true });
+    const exchange = createDreamDexExchange(config);
     const ctx: DreamDexContext = { exchange: exchange as never, config };
 
     const markets = await activeMarkets(ctx);
@@ -34,22 +40,13 @@ export async function POST(request: Request) {
     const validation = validateTrade(view, tradeRequest, limits, Date.now());
     if (!validation.ok) {
       console.log(`[TRADE] validation failed: ${validation.reason}`);
-      return NextResponse.json({ error: validation.reason }, { status: 422 });
+      return NextResponse.json({ ok: false, reason: validation.reason }, { status: 422 });
     }
+
     console.log("[TRADE] validation passed");
-
-    const result = await submitTrade(exchange as unknown as TradeExecutor, view, tradeRequest);
-    if (!result.ok) {
-      const state: TradeState = { status: "failed", error: result.error };
-      console.error(`[TRADE] failed: ${result.error}`);
-      return NextResponse.json({ state }, { status: 502 });
-    }
-
-    console.log(`[TRADE] order submitted tx=${result.txHash}`);
-    const state: TradeState = { status: "confirmed", txHash: result.txHash, filled: result.filled, price: result.price };
-    return NextResponse.json({ state });
+    return NextResponse.json({ ok: true, market: view });
   } catch (error) {
-    console.error("[TRADE] unexpected error", error);
-    return NextResponse.json({ error: "Unable to execute this trade right now." }, { status: 502 });
+    console.error("[TRADE] unexpected error during validation", error);
+    return NextResponse.json({ error: "Unable to validate this trade right now." }, { status: 502 });
   }
 }
