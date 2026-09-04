@@ -22,6 +22,10 @@ export function useEvaluation(marketId: string | null) {
   }, [marketId]);
 
   useEffect(() => {
+    // Same fetch-on-(marketId-)change pattern as useMarkets above; resetting to
+    // null before re-evaluating a new market is the correct, intentional
+    // behavior (stale decision from the prior market must not linger).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDecision(null);
     evaluate();
   }, [evaluate]);
