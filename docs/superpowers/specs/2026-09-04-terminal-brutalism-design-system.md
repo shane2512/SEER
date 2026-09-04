@@ -1,8 +1,11 @@
 # SEER: Terminal Brutalism Design System
 
 Date: 2026-09-04
-Status: Tokens implemented (`app/globals.css`, `app/layout.tsx`); component
-rules below are the reference for Phase 2 page rebuilds.
+Status: **Superseded** by
+[`2026-09-04-brutal-clay-design-system.md`](2026-09-04-brutal-clay-design-system.md)
+per explicit user direction — same Stitch project, a different design
+system asset within it. Kept here for history; `app/globals.css` no
+longer implements this document.
 Source: Stitch project "Brutalist Minimal Trading Dashboard"
 (`projects/1897895306545728849`), pulled via the Stitch MCP connector's
 `get_project`/`get_screen` — real design data, not a guess from a
