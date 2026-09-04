@@ -61,4 +61,24 @@ describe("submitTrade", () => {
     const result = await submitTrade(executor, market, request);
     expect(result).toEqual({ ok: false, error: expect.stringContaining("InvalidPrice") });
   });
+
+  it("crosses the NO side from the real NO ask (1 - yesBid), not the NO mid (1 - yesMid)", async () => {
+    // yesBid: 0.6 -> real NO ask is 1-0.6=0.4, cross = 0.402.
+    // The old (buggy) formula used 1-yesMid=1-0.61=0.39, cross = 0.392 —
+    // this assertion pins the correct number so that bug can't come back.
+    const createOrder = vi.fn().mockResolvedValue({ id: "1", status: "closed", filled: 5, price: 0.402, txHash: "0xTX" });
+    const executor: TradeExecutor = { createOrder };
+    const request: TradeRequest = { marketId: "0xabc", side: "NO", size: 5 };
+
+    await submitTrade(executor, market, request);
+
+    expect(createOrder).toHaveBeenCalledWith(
+      expect.stringContaining("#NO"),
+      "limit",
+      "buy",
+      5,
+      expect.closeTo(0.402, 5),
+      { timeInForce: "IOC" },
+    );
+  });
 });

@@ -38,11 +38,16 @@ export async function submitTrade(
   const { yes, no } = outcomeSymbols({ symbol: market.symbol, outcomes: undefined } as unknown as UnifiedMarket);
   const ref = request.side === "YES" ? yes : no;
 
-  const touch = request.side === "YES" ? market.yesAsk : market.yesMid !== null ? 1 - market.yesMid : null;
+  // The venue quotes everything in YES terms (docs/event-contracts.md sharp
+  // edge #7): a NO ask is `1 - yesBid`, never `1 - yesMid` — the mid is the
+  // reference price, not a tradable one. Task 9's permissions.ts already had
+  // to fix this exact confusion (askOrBid vs referenceMid); use the same
+  // convention here rather than re-deriving it.
+  const touch = request.side === "YES" ? market.yesAsk : market.yesBid !== null ? 1 - market.yesBid : null;
   if (touch === null) {
     return { ok: false, error: `no ${request.side} liquidity to cross` };
   }
-  const cross = request.side === "YES" ? Math.min(0.99, touch + 0.002) : Math.min(0.99, touch + 0.002);
+  const cross = Math.min(0.99, touch + 0.002);
 
   try {
     const order = await executor.createOrder(ref, "limit", "buy", request.size, cross, { timeInForce: "IOC" });
