@@ -23,20 +23,18 @@ const decision = {
   timestamp: Date.now(),
 };
 
-vi.stubGlobal(
-  "fetch",
-  vi.fn((url: string, init?: RequestInit) => {
-    if (url === "/api/markets") return Promise.resolve({ ok: true, json: async () => ({ markets: [market] }) });
-    if (url === "/api/evaluate") return Promise.resolve({ ok: true, json: async () => ({ decision }) });
-    if (url === "/api/trade") {
-      return Promise.resolve({
-        ok: true,
-        json: async () => ({ state: { status: "confirmed", txHash: "0xTX", filled: 5, price: 0.62 } }),
-      });
-    }
-    return Promise.resolve({ ok: true, json: async () => ({}) });
-  }) as unknown as typeof fetch,
-);
+const mockFetch = vi.fn((url: string, init?: RequestInit) => {
+  if (url === "/api/markets") return Promise.resolve({ ok: true, json: async () => ({ markets: [market] }) });
+  if (url === "/api/evaluate") return Promise.resolve({ ok: true, json: async () => ({ decision }) });
+  if (url === "/api/trade") {
+    return Promise.resolve({
+      ok: true,
+      json: async () => ({ state: { status: "confirmed", txHash: "0xTX", filled: 5, price: 0.62 } }),
+    });
+  }
+  return Promise.resolve({ ok: true, json: async () => ({}) });
+});
+vi.stubGlobal("fetch", mockFetch as unknown as typeof fetch);
 
 describe("DashboardPage", () => {
   it("renders the market, its signal, and lets the user execute a trade", async () => {
@@ -49,5 +47,26 @@ describe("DashboardPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /execute/i }));
 
     await waitFor(() => expect(screen.getByText(/0xTX/)).toBeInTheDocument());
+  });
+
+  it("shows a retryable error, not a silently stuck feed, when evaluation fails", async () => {
+    mockFetch.mockImplementationOnce((url: string) =>
+      // this call is the /api/markets fetch on mount
+      Promise.resolve({ ok: true, json: async () => ({ markets: [market] }) } as Response),
+    );
+    mockFetch.mockImplementationOnce((url: string) =>
+      // this call is the /api/evaluate fetch, which fails
+      Promise.resolve({ ok: true, json: async () => ({ error: "no live price feed reading for this asset" }) } as Response),
+    );
+
+    const { default: DashboardPage } = await import("@/app/dashboard/page");
+    render(<DashboardPage />);
+
+    await waitFor(() => expect(screen.getByText("BTC")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText(/no live price feed reading for this asset/i)).toBeInTheDocument(),
+    );
+    expect(screen.queryByText("BULLISH")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /retry evaluation/i })).toBeInTheDocument();
   });
 });
