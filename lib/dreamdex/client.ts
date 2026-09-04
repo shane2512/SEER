@@ -71,8 +71,8 @@ export function loadDreamDexConfig(env: NodeJS.ProcessEnv = process.env): DreamD
     network: "testnet",
     chainId: parsePositiveNumber(env.NEXT_PUBLIC_SOMNIA_CHAIN_ID, DEFAULT_CHAIN_ID, "NEXT_PUBLIC_SOMNIA_CHAIN_ID"),
     rpcUrl: env.NEXT_PUBLIC_SOMNIA_RPC_URL ?? DEFAULT_RPC_URL,
-    wsRpcUrl: env.SOMNIA_WS_RPC_URL ?? DEFAULT_WS_RPC_URL,
-    indexerUrl: env.DREAMDEX_INDEXER_URL ?? DEFAULT_INDEXER_URL,
+    wsRpcUrl: env.NEXT_PUBLIC_SOMNIA_WS_RPC_URL ?? DEFAULT_WS_RPC_URL,
+    indexerUrl: env.NEXT_PUBLIC_DREAMDEX_INDEXER_URL ?? DEFAULT_INDEXER_URL,
     venueId: venueId ? (venueId as `0x${string}`) : undefined,
     privateKey: normalizePrivateKey(privateKey),
   };

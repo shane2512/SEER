@@ -24,7 +24,7 @@ describe("loadDreamDexConfig", () => {
     const config = loadDreamDexConfig({
       NEXT_PUBLIC_SOMNIA_CHAIN_ID: "50312",
       NEXT_PUBLIC_SOMNIA_RPC_URL: "https://api.infra.testnet.somnia.network",
-      DREAMDEX_INDEXER_URL: "https://dev.smk.somnia.host/v1/graphql",
+      NEXT_PUBLIC_DREAMDEX_INDEXER_URL: "https://dev.smk.somnia.host/v1/graphql",
       DREAMDEX_VENUE_ID: "0xabc",
     } as unknown as NodeJS.ProcessEnv);
 
