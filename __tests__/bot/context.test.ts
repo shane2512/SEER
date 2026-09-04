@@ -30,4 +30,16 @@ describe("loadRiskLimits", () => {
     expect(limits.maxOrderSize).toBeGreaterThan(0);
     expect(limits.maxPriceDeviation).toBeGreaterThan(0);
   });
+
+  it("throws instead of silently defeating the guardrail on a malformed MAX_ORDER_SIZE", () => {
+    expect(() =>
+      loadRiskLimits({ MAX_ORDER_SIZE: "not-a-number" } as unknown as NodeJS.ProcessEnv),
+    ).toThrow(/MAX_ORDER_SIZE/);
+  });
+
+  it("throws instead of silently defeating the guardrail on a malformed MAX_PRICE_DEVIATION", () => {
+    expect(() =>
+      loadRiskLimits({ MAX_PRICE_DEVIATION: "0.05x" } as unknown as NodeJS.ProcessEnv),
+    ).toThrow(/MAX_PRICE_DEVIATION/);
+  });
 });

@@ -1,4 +1,4 @@
-import { loadDreamDexConfig, type DreamDexConfig } from "../dreamdex/client";
+import { loadDreamDexConfig, parsePositiveNumber, type DreamDexConfig } from "../dreamdex/client";
 import type { RiskLimits } from "./permissions";
 
 /** DreamDexConfig with `privateKey` guaranteed present — throws otherwise,
@@ -20,7 +20,7 @@ const DEFAULT_MAX_PRICE_DEVIATION = 0.05;
 
 export function loadRiskLimits(env: NodeJS.ProcessEnv = process.env): RiskLimits {
   return {
-    maxOrderSize: env.MAX_ORDER_SIZE ? Number(env.MAX_ORDER_SIZE) : DEFAULT_MAX_ORDER_SIZE,
-    maxPriceDeviation: env.MAX_PRICE_DEVIATION ? Number(env.MAX_PRICE_DEVIATION) : DEFAULT_MAX_PRICE_DEVIATION,
+    maxOrderSize: parsePositiveNumber(env.MAX_ORDER_SIZE, DEFAULT_MAX_ORDER_SIZE, "MAX_ORDER_SIZE"),
+    maxPriceDeviation: parsePositiveNumber(env.MAX_PRICE_DEVIATION, DEFAULT_MAX_PRICE_DEVIATION, "MAX_PRICE_DEVIATION"),
   };
 }

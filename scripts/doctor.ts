@@ -5,9 +5,9 @@
 // the operator wallet's native balance for gas, per docs/getting-started.md's
 // "empty wallet to a running bot" checklist.
 import { config as loadEnv } from "dotenv";
-import { createPublicClient, http, defineChain, type Hex } from "viem";
+import { createPublicClient, http, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { loadDreamDexConfig } from "../lib/dreamdex/client";
+import { loadDreamDexConfig, resolveSomniaChain } from "../lib/dreamdex/client";
 
 // Unlike Next.js API routes, a standalone tsx script does not auto-load
 // .env.local — load it explicitly so this script sees the same config a
@@ -16,12 +16,7 @@ loadEnv({ path: ".env.local" });
 
 async function main() {
   const config = loadDreamDexConfig();
-  const chain = defineChain({
-    id: config.chainId,
-    name: `somnia-${config.chainId}`,
-    nativeCurrency: { name: "Somnia Test Token", symbol: "STT", decimals: 18 },
-    rpcUrls: { default: { http: [config.rpcUrl] } },
-  });
+  const chain = resolveSomniaChain(config);
   const client = createPublicClient({ chain, transport: http(config.rpcUrl) });
 
   const blockNumber = await client.getBlockNumber();

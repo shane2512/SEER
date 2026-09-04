@@ -1,5 +1,5 @@
 import { SomniaMarkets, type SomniaMarketsConfig } from "@somnia-chain/markets-sdk";
-import { getSomniaChain, defineChain } from "@somnia-chain/markets-sdk/chains";
+import { getSomniaChain, defineChain, type Chain } from "@somnia-chain/markets-sdk/chains";
 
 export interface DreamDexConfig {
   network: "testnet";
@@ -16,6 +16,43 @@ const DEFAULT_RPC_URL = "https://api.infra.testnet.somnia.network";
 const DEFAULT_WS_RPC_URL = "wss://api.infra.testnet.somnia.network/ws";
 const DEFAULT_INDEXER_URL = "https://dev.smk.somnia.host/v1/graphql";
 
+const HEX_64_RE = /^[0-9a-fA-F]{64}$/;
+
+/**
+ * Parse an env string into a positive, finite number, falling back to
+ * `fallback` when the variable is unset/empty. Throws a clear error when the
+ * variable IS set but doesn't parse to a finite positive number — a typo'd
+ * value (e.g. "0.05x") must fail loudly at startup, not silently become
+ * `NaN` and defeat every downstream `>`/`<` guardrail comparison (NaN
+ * compares false against every bound, so a NaN limit passes every trade).
+ */
+export function parsePositiveNumber(raw: string | undefined, fallback: number, name: string): number {
+  const trimmed = (raw ?? "").trim();
+  if (!trimmed) return fallback;
+  const value = Number(trimmed);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`${name} is set to "${trimmed}", which is not a finite positive number.`);
+  }
+  return value;
+}
+
+/**
+ * Normalize a private key env value to a `0x`-prefixed hex string. A real
+ * gitignored `.env.local` in this repo was found (Task 22) to store the key
+ * without its `0x` prefix — accept that shape, but only when the value
+ * actually looks like 64 hex characters; never blindly prepend `0x` to
+ * something that isn't hex, which would just produce a different-looking
+ * garbage value instead of failing loudly.
+ */
+function normalizePrivateKey(raw: string): `0x${string}` | undefined {
+  if (!raw) return undefined;
+  if (raw.startsWith("0x") || raw.startsWith("0X")) return raw as `0x${string}`;
+  if (HEX_64_RE.test(raw)) return (`0x${raw}`) as `0x${string}`;
+  // Doesn't look like a bare hex key — pass through unchanged so any
+  // downstream consumer's own validation reports the real problem.
+  return raw as `0x${string}`;
+}
+
 /**
  * Read + validate SEER's Somnia/DreamDEX environment into a DreamDexConfig.
  * Testnet only — SEER has no mainnet code path (CLAUDE.md non-negotiable
@@ -27,13 +64,40 @@ export function loadDreamDexConfig(env: NodeJS.ProcessEnv = process.env): DreamD
 
   return {
     network: "testnet",
-    chainId: env.NEXT_PUBLIC_SOMNIA_CHAIN_ID ? Number(env.NEXT_PUBLIC_SOMNIA_CHAIN_ID) : DEFAULT_CHAIN_ID,
+    chainId: parsePositiveNumber(env.NEXT_PUBLIC_SOMNIA_CHAIN_ID, DEFAULT_CHAIN_ID, "NEXT_PUBLIC_SOMNIA_CHAIN_ID"),
     rpcUrl: env.NEXT_PUBLIC_SOMNIA_RPC_URL ?? DEFAULT_RPC_URL,
     wsRpcUrl: env.SOMNIA_WS_RPC_URL ?? DEFAULT_WS_RPC_URL,
     indexerUrl: env.DREAMDEX_INDEXER_URL ?? DEFAULT_INDEXER_URL,
     venueId: venueId ? (venueId as `0x${string}`) : undefined,
-    privateKey: privateKey ? (privateKey as `0x${string}`) : undefined,
+    privateKey: normalizePrivateKey(privateKey),
   };
+}
+
+/**
+ * Resolve a SEER DreamDexConfig to a viem Chain — a known Somnia chain
+ * definition (carrying `contracts.multicall3`, block explorer metadata,
+ * etc.) when `chainId` is one the SDK ships, else a minimal fallback built
+ * from the configured RPC URLs. This is the one place chain resolution
+ * happens — every call site (exchange construction, the trade-status route,
+ * the doctor script) must go through this function rather than duplicating
+ * the `getSomniaChain(...) ?? defineChain({...})` fallback inline, or it
+ * silently loses that metadata.
+ */
+export function resolveSomniaChain(config: DreamDexConfig): Chain {
+  return (
+    getSomniaChain(config.chainId) ??
+    defineChain({
+      id: config.chainId,
+      name: `somnia-${config.chainId}`,
+      nativeCurrency: { name: "Somnia Test Token", symbol: "STT", decimals: 18 },
+      rpcUrls: {
+        default: {
+          http: [config.rpcUrl],
+          webSocket: [config.wsRpcUrl],
+        },
+      },
+    })
+  );
 }
 
 /**
@@ -52,17 +116,7 @@ export function createDreamDexExchange(
     );
   }
 
-  const chain = getSomniaChain(config.chainId) ?? defineChain({
-    id: config.chainId,
-    name: `somnia-${config.chainId}`,
-    nativeCurrency: { name: "Somnia Test Token", symbol: "STT", decimals: 18 },
-    rpcUrls: {
-      default: {
-        http: [config.rpcUrl],
-        webSocket: [config.wsRpcUrl],
-      },
-    },
-  });
+  const chain = resolveSomniaChain(config);
 
   const somniaConfig: SomniaMarketsConfig = {
     indexerUrl: config.indexerUrl,
