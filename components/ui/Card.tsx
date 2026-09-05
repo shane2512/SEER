@@ -13,7 +13,7 @@ export function Card({
 }: HTMLAttributes<HTMLDivElement> & { label?: string }) {
   return (
     <div
-      className={`clay-1 rounded-2xl border-2 border-border-layer bg-surface-layer p-4 ${className}`}
+      className={`clay-1 rounded-2xl border-2 border-border-layer bg-surface-layer p-5 ${className}`}
       {...props}
     >
       {label && (

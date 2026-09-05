@@ -29,7 +29,7 @@ describe("HistoryPage", () => {
     mockUseBrowserExchange.mockReturnValue(null);
     const { default: HistoryPage } = await import("@/app/history/page");
     render(<HistoryPage />);
-    expect(screen.getByText(/connect your wallet/i)).toBeInTheDocument();
+    expect(screen.getByText(/connect a wallet/i)).toBeInTheDocument();
   });
 
   it("shows real metrics, positions, and a filterable trade table for the connected wallet", async () => {
