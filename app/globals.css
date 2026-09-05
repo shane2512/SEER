@@ -258,6 +258,21 @@ body {
   --section-pivotal: clamp(6rem, 14vh, 11rem);
   --section-major: clamp(4.5rem, 10vh, 7.5rem);
   --section-minor: clamp(3rem, 6vh, 4.5rem);
+
+  /* --- Shell width -------------------------------------------------------
+   * The single content-column width shared by the header, footer, the
+   * landing page's every section (hero included) and the dashboard/history
+   * page shells — one token rather than each of those six call sites
+   * hard-coding its own `max-w-6xl`/`max-w-7xl`, which is what let the
+   * header/footer end up narrower than the dashboard and history shells
+   * they wrap on wide viewports. 90rem (1440px) rather than a Tailwind
+   * default step: `max-w-6xl` (72rem/1152px) read as a wide unused gutter
+   * on anything past ~1440px wide, and dashboard/history are dense
+   * two-column app screens that benefit from real width, not marketing
+   * copy that wants a narrow measure (their paragraph text stays capped
+   * separately via `ch`-based max-widths, so this only gives the grids and
+   * card rows more room, never elongates a line of prose). */
+  --shell-width: 90rem;
 }
 
 @theme inline {

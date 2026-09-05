@@ -110,7 +110,7 @@ export default function LandingPage() {
               <FloatingLines linesGradient={["#ffffff"]} interactive parallax mixBlendMode="screen" />
             </div>
 
-            <InView immediate className="mx-auto max-w-7xl">
+            <InView immediate className="mx-auto max-w-[var(--shell-width)]">
               <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-border-active bg-surface-active/70 px-3.5 py-1.5 font-mono text-[12px] text-text-dim backdrop-blur-sm">
                 <span className="pulse-dim inline-block size-1.5 rounded-full bg-text-bright" />
                 Live on Somnia Shannon testnet
@@ -156,7 +156,7 @@ export default function LandingPage() {
             version gave four unrelated one-word values the same visual weight
             as a feature, which is more structure than the content earns. */}
         <section className="px-5 lg:px-8">
-          <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-[var(--shell-width)]">
             <hr className="rule-fade" />
             <InView className="grid grid-cols-2 divide-x divide-border-well lg:grid-cols-4">
               {FACTS.map((fact) => (
@@ -179,7 +179,7 @@ export default function LandingPage() {
             single biggest thing making the page read as generated: four
             identical containers implying four identical kinds of thing. */}
         <section className="px-5 py-[var(--section-major)] lg:px-8">
-          <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-[var(--shell-width)]">
             <InView>
               <h2 className="text-display-lg max-w-[18ch] text-text-bright">
                 <Line>Built on the real thing.</Line>
@@ -216,7 +216,7 @@ export default function LandingPage() {
             numbering, a vertical rail, and the page's only scroll-scrubbed
             effect. */}
         <section id="how-it-works" className="scroll-mt-24 px-5 py-[var(--section-major)] lg:px-8">
-          <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-[var(--shell-width)]">
             <InView>
               <h2 className="text-display-lg max-w-[16ch] text-text-bright">
                 <Line>Four checkpoints, every trade.</Line>
@@ -319,7 +319,7 @@ export default function LandingPage() {
             landing page, and it also fights the left-aligned rhythm the rest
             of the page establishes. */}
         <section className="px-5 pt-[var(--section-minor)] pb-[var(--section-pivotal)] lg:px-8">
-          <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-[var(--shell-width)]">
             <hr className="rule-fade mb-[var(--section-minor)]" />
             <InView>
               <h2 className="text-display-lg max-w-[15ch] text-text-bright">

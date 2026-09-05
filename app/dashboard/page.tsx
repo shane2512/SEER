@@ -21,7 +21,7 @@ import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
 // card, 24px of gap between cards. Internal spacing staying below external is
 // what stops a dense grid reading as cramped in one place and empty in
 // another — the previous 16px padding against a 12px gap had it backwards.
-const SHELL = "mx-auto max-w-6xl px-5 py-10 lg:px-8";
+const SHELL = "mx-auto max-w-[var(--shell-width)] px-5 py-10 lg:px-8";
 
 /** Shown while live DreamDEX markets are being discovered. */
 function DashboardSkeleton() {

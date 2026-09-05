@@ -38,7 +38,7 @@ export function SiteHeader({
 }) {
   return (
     <header className="sticky top-0 z-50 border-b border-border-well/80 bg-surface-base/72 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-5 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-[var(--shell-width)] items-center gap-6 px-5 lg:px-8">
         <Link
           href="/"
           className="font-display text-lg font-bold tracking-[-0.04em] text-text-bright focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-border-hard"

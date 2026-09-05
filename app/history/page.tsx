@@ -13,7 +13,7 @@ import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
 import type { Portfolio } from "@somnia-chain/markets-sdk";
 
 // Same rhythm as the dashboard: 20px inside a card, 24px between cards.
-const SHELL = "mx-auto max-w-6xl px-5 py-10 lg:px-8";
+const SHELL = "mx-auto max-w-[var(--shell-width)] px-5 py-10 lg:px-8";
 
 export default function HistoryPage() {
   const { address, isConnected } = useWallet();

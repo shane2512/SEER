@@ -8,7 +8,7 @@ import Link from "next/link";
 export function SiteFooter() {
   return (
     <footer className="relative z-10 mt-auto border-t border-border-well">
-      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-8 font-mono text-[13px] text-text-dim sm:flex-row sm:items-center sm:justify-between lg:px-8">
+      <div className="mx-auto flex max-w-[var(--shell-width)] flex-col gap-3 px-5 py-8 font-mono text-[13px] text-text-dim sm:flex-row sm:items-center sm:justify-between lg:px-8">
         <p>Somnia Shannon testnet only. Nothing here is investment advice.</p>
         <div className="flex items-center gap-5">
           <Link href="/dashboard" className="transition-colors hover:text-text-bright">
