@@ -467,3 +467,10 @@ body {
     animation: none;
   }
 }
+
+/* The hero's static dodecahedron render (public/oracle-artifact.png) and its
+ * supporting .artifact-float/.artifact-shadow/.artifact-breathe rules that
+ * lived here were removed when the hero background switched to the
+ * FloatingLines WebGL shader (components/motion/FloatingLines.tsx, wired up
+ * in app/page.tsx) — an animated background rather than a single floating
+ * object beside the copy. */

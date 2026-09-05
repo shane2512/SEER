@@ -3,6 +3,7 @@ import { InView, Line, Rise } from "@/components/motion/InView";
 import { PointerField } from "@/components/motion/Parallax";
 import { PipelineRail } from "@/components/landing/PipelineRail";
 import { SiteHeader } from "@/components/chrome/SiteHeader";
+import FloatingLines from "@/components/motion/FloatingLinesLazy";
 
 // Every value below is a real property of the deployed system — the Shannon
 // chain id, its block time, and the custody model that follows from SEER
@@ -90,20 +91,26 @@ export default function LandingPage() {
             fold is deliberately quiet by comparison. */}
         <PointerField>
           <section className="relative overflow-hidden px-5 pt-[var(--section-major)] pb-[var(--section-pivotal)] lg:px-8">
-            {/* A second, pointer-tracked pool of light over the root
-                atmosphere. It moves a fraction of the cursor's travel, which
-                makes the obsidian plane read as physically lit rather than
-                painted. Damped in PointerField, not tracked one-to-one. */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 -z-10"
-              style={{
-                background:
-                  "radial-gradient(42rem 28rem at calc(42% + var(--px, 0) * 9%) calc(34% + var(--py, 0) * 11%), rgba(255,255,255,0.062), transparent 66%)",
-              }}
-            />
+            {/* The hero's only background layer: a WebGL shader (React
+                Bits' FloatingLines, components/motion/FloatingLines.tsx)
+                drawing slow, wave-like white lines rather than the earlier
+                static radial-gradient glow + separate dodecahedron render.
+                `linesGradient={["#ffffff"]}` is load-bearing, not
+                decorative — the shader's own `background_color()` defaults
+                to a hardcoded blue/pink pair, and only supplying a gradient
+                array bypasses it (see the component's header comment). Its
+                own `interactive`/`parallax` pointer response replaces the
+                old pointer-tracked gradient div, so PointerField here is
+                kept only for the CTA row's own hover/parallax affordances,
+                not for driving this background. `mixBlendMode="screen"`
+                lets it sit over `.atmos`/`.atmos-grain` without a flat
+                rectangle stacking on top of them. Absolutely positioned and
+                `aria-hidden`: it's atmosphere, not content. */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 opacity-70">
+              <FloatingLines linesGradient={["#ffffff"]} interactive parallax mixBlendMode="screen" />
+            </div>
 
-            <InView immediate className="mx-auto max-w-6xl">
+            <InView immediate className="mx-auto max-w-7xl">
               <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-border-active bg-surface-active/70 px-3.5 py-1.5 font-mono text-[12px] text-text-dim backdrop-blur-sm">
                 <span className="pulse-dim inline-block size-1.5 rounded-full bg-text-bright" />
                 Live on Somnia Shannon testnet
@@ -115,14 +122,12 @@ export default function LandingPage() {
                 <Line delay={240}>its work.</Line>
               </h1>
 
-              <div className="mt-9 max-w-[54ch]">
-                <Line delay={420}>
-                  <p className="font-mono text-[15px] leading-7 text-text-dim">
-                    SEER evaluates live BTC and ETH event contracts on Somnia with a deterministic model,
-                    publishes the reasoning behind every call, and hands the order to your own wallet to sign.
-                  </p>
-                </Line>
-              </div>
+              <Line delay={420}>
+                <p className="mt-9 max-w-[54ch] font-mono text-[15px] leading-7 text-text-dim">
+                  SEER evaluates live BTC and ETH event contracts on Somnia with a deterministic model,
+                  publishes the reasoning behind every call, and hands the order to your own wallet to sign.
+                </p>
+              </Line>
 
               <div className="mt-10 flex flex-wrap items-center gap-3">
                 <Rise delay={540}>
