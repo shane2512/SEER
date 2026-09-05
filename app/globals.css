@@ -143,6 +143,22 @@ body {
   color: var(--color-text-bright);
 }
 
+/* Hide the native scrollbar site-wide (reported on the landing page, but
+   applied everywhere rather than just there — the alternative left it
+   reappearing every time you navigated to /dashboard or /history, which
+   would read as an inconsistency rather than a fix). Scrolling itself is
+   untouched: every input method (wheel, trackpad, keyboard, touch) still
+   works exactly as before — only the OS-drawn track/thumb is suppressed,
+   which is what let the .atmos background and full-bleed sections read
+   edge-to-edge instead of being interrupted by a scrollbar gutter. */
+html {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge */
+}
+html::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, current Edge */
+}
+
 .font-mono,
 [data-numeric] {
   font-variant-numeric: tabular-nums;
