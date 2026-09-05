@@ -32,6 +32,16 @@ export function useTrade() {
 
       setState({ status: "submitting", requestId });
       const exchange = createBrowserDreamDexExchange(walletClient);
+      // A freshly-built exchange's symbol table is empty — createOrder's own
+      // docs are explicit that it throws InvalidInputError ("unknown symbol
+      // — call loadMarkets() first") until this runs at least once. The
+      // server-side exchange used for /api/trade/validate already calls this
+      // internally (via activeMarkets), but that's a completely separate
+      // SomniaMarkets instance from this browser one — confirmed live: a
+      // real order attempt threw exactly this error, on the exact outcome
+      // symbol just validated moments earlier, never caught by unit tests
+      // because they mock createBrowserDreamDexExchange entirely.
+      await exchange.loadMarkets();
       const result = await submitTrade(exchange as unknown as TradeExecutor, market, { marketId, side, size });
       if (!result.ok) {
         setState({ status: "failed", error: result.error });

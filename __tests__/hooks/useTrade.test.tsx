@@ -2,13 +2,14 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 
 const mockCreateOrder = vi.fn().mockResolvedValue({ id: "1", status: "closed", filled: 5, price: 0.62, txHash: "0xTX" });
+const mockLoadMarkets = vi.fn().mockResolvedValue({});
 const fakeWalletClient = { account: { address: "0xABC" }, chain: { id: 50312 } };
 
 vi.mock("wagmi", () => ({
   useWalletClient: vi.fn(() => ({ data: fakeWalletClient })),
 }));
 vi.mock("@/lib/dreamdex/browserClient", () => ({
-  createBrowserDreamDexExchange: vi.fn(() => ({ createOrder: mockCreateOrder })),
+  createBrowserDreamDexExchange: vi.fn(() => ({ createOrder: mockCreateOrder, loadMarkets: mockLoadMarkets })),
 }));
 
 const marketView = {
@@ -27,6 +28,7 @@ const marketView = {
 
 beforeEach(() => {
   mockCreateOrder.mockClear();
+  mockLoadMarkets.mockClear();
   vi.stubGlobal(
     "fetch",
     vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, market: marketView }) }),

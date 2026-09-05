@@ -35,11 +35,21 @@ const mockUseWallet = vi.fn();
 vi.mock("@/hooks/useWallet", () => ({ useWallet: () => mockUseWallet() }));
 
 const mockCreateOrder = vi.fn().mockResolvedValue({ id: "1", status: "closed", filled: 5, price: 0.62, txHash: "0xTX" });
+// loadMarkets must be mocked here too -- useTrade calls it on the browser
+// exchange before submitTrade (see hooks/useTrade.ts's comment: a freshly
+// built exchange's symbol table is empty until this runs). Missing it here
+// made this suite's "execute a trade" test fail once that fix landed --
+// the mocked exchange threw "loadMarkets is not a function", swallowed by
+// useTrade's catch into a silent "failed" state instead of "confirmed".
 vi.mock("@/hooks/useBrowserExchange", () => ({
-  useBrowserExchange: () => ({ createOrder: mockCreateOrder, client: { getErc20Balance: vi.fn(), getErc20Metadata: vi.fn() } }),
+  useBrowserExchange: () => ({
+    createOrder: mockCreateOrder,
+    loadMarkets: vi.fn().mockResolvedValue({}),
+    client: { getErc20Balance: vi.fn(), getErc20Metadata: vi.fn() },
+  }),
 }));
 vi.mock("@/lib/dreamdex/browserClient", () => ({
-  createBrowserDreamDexExchange: () => ({ createOrder: mockCreateOrder }),
+  createBrowserDreamDexExchange: () => ({ createOrder: mockCreateOrder, loadMarkets: vi.fn().mockResolvedValue({}) }),
 }));
 vi.mock("wagmi", () => ({
   useWalletClient: () => ({ data: { account: { address: "0xABC" }, chain: { id: 50312 } } }),
@@ -61,7 +71,7 @@ describe("DashboardPage", () => {
     render(<DashboardPage />);
 
     await waitFor(() => expect(screen.getByText("BULLISH")).toBeInTheDocument());
-    expect(screen.getByText(/connect your wallet to trade/i)).toBeInTheDocument();
+    expect(screen.getByText(/connect a wallet to trade/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^execute/i })).not.toBeInTheDocument();
   });
 
@@ -101,7 +111,7 @@ describe("DashboardPage", () => {
       expect(screen.getByText(/no live price feed reading for this asset/i)).toBeInTheDocument(),
     );
     expect(screen.queryByText("BULLISH")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /retry evaluation/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /run the evaluation again/i })).toBeInTheDocument();
   });
 
   it("switches the displayed market when a different MarketSelector tile is clicked", async () => {
