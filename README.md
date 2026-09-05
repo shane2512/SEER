@@ -7,6 +7,8 @@ deterministic decision (direction, confidence, rationale), validates it against 
 risk limits, and executes it on **Somnia Shannon testnet** through the DreamDEX
 `@somnia-chain/markets-sdk`.
 
+📺 **[Watch the demo](https://youtu.be/gcHBpvcPFvI)** — live on Somnia Shannon, nothing staged.
+
 See `PRD.md` for the full product spec and `docs/superpowers/specs/` for the technical
 design.
 
